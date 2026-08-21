@@ -54,15 +54,23 @@ only computable because they were never merged into one number.
 
 ## 3. Entry kinds
 
-| Kind | Effect |
-|---|---|
-| `grant` | Credits or funds made available |
-| `issue` | Reservation of a face value |
-| `capture` | Settlement of a reserved authorization |
-| `release` | Return of an unused reservation |
-| `expire` | Return of a reservation at maturity, or lapse of an entitlement |
-| `dishonor` | A refused authorization. `delta_amount` is 0 |
-| `adjust` | A correction, referencing the entry it corrects in `meta.corrects` |
+A reservation is a commitment, not a movement of funds. The balance therefore moves only when
+something settles: `grant`, `capture`, `adjust`, and the lapse of an entitlement. Entries that open
+or close a reservation (`issue`, `release`, the expiry of a reservation) and entries that record a
+refusal or an approval carry `delta_amount = 0`; what they reserve or decide lives in their fields
+and `meta`, not in the balance column. This is what keeps the two derived figures in §4 from
+double-counting each other.
+
+| Kind | `delta_amount` | Effect |
+|---|---|---|
+| `grant` | positive | Credits or funds made available |
+| `issue` | 0 | Opens a reservation. `meta.face_value` records the amount held |
+| `capture` | negative | Settlement of a reserved authorization, and the close of its reservation |
+| `release` | 0 | Close of a reservation whose action did not run |
+| `expire` | 0 or negative | 0 for a reservation lapsing at maturity; negative for an entitlement lapsing with unused balance |
+| `dishonor` | 0 | A refused authorization, with the reason in `meta` |
+| `event` | 0 | A non-monetary occurrence that must remain auditable: the approval or rejection of a held authorization, a revocation, a suspension. `meta.event` names it |
+| `adjust` | any | A correction, referencing the entry it corrects in `meta.corrects` |
 
 `dishonor` entries carry no balance effect but MUST be recorded. The moment a request was refused,
 and why, is the most informative event the system observes — for the account holder, for the
@@ -74,31 +82,36 @@ There is no `delete` and no `update`. Corrections are appended as `adjust`.
 
 ## 4. Invariants
 
-For any subject, at any point:
+For any subject, at any point, two figures are derivable and only two:
 
 ```
-balance = Σ delta_amount over all entries with seq ≤ n
+balance   = Σ delta_amount over all entries with seq ≤ n
+reserved  = Σ meta.face_value over issue entries whose authorization has not yet
+            reached a terminal state at seq ≤ n
+available = balance − reserved
 ```
 
-An implementation MUST be able to reconstruct a subject's balance from its register alone. Any
-cached balance that disagrees with this sum is wrong by definition and MUST be reconciled toward the
-register.
-
-Reserved-but-unsettled funds are the sum of `issue` entries whose authorizations have not yet
-reached a terminal state. Available balance is `balance` minus that sum.
+Because reservations carry `delta_amount = 0` (§3), the two sums never overlap: settlement lives in
+`balance`, commitment lives in `reserved`, and neither is counted twice. An implementation MUST be
+able to reconstruct all three figures from the register alone. Any cached figure that disagrees
+with the register is wrong by definition and MUST be reconciled toward it.
 
 ---
 
 ## 5. Integrity
 
-Each entry is chained to its predecessor within the subject:
+Each entry is chained to its predecessor within the subject. `prev_hash` is a field of the entry;
+the chaining comes from its presence inside the hashed content, so the hash is defined over exactly
+one thing:
 
 ```
-hash = SHA-256( prev_hash ‖ canonical_json(entry without hash) )
+hash = SHA-256( JCS(entry with the hash field removed) )
 ```
 
-Canonicalization follows RFC 8785 (JCS). The first entry for a subject uses 32 zero bytes as
-`prev_hash`.
+Canonicalization follows RFC 8785 (JCS); the digest is written as lowercase hex. The first entry
+for a subject carries 64 zero hex characters as `prev_hash`. The example register in
+[`examples/register.jsonl`](examples/register.jsonl) chains under this exact definition and can be
+used as a test vector.
 
 Implementations SHOULD periodically sign a root over all subject chain heads — daily is sufficient
 for most purposes — and retain those signatures alongside the register. A verifier holding an export

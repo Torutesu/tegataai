@@ -10,7 +10,7 @@
     "seq": { "type": "integer", "minimum": 0, "description": "Strictly increasing within a subject. No gaps." },
     "subject_id": { "type": "string", "minLength": 1, "maxLength": 256 },
     "at": { "type": "string", "format": "date-time" },
-    "kind": { "enum": ["grant", "issue", "capture", "release", "expire", "dishonor", "adjust"] },
+    "kind": { "enum": ["grant", "issue", "capture", "release", "expire", "dishonor", "event", "adjust"] },
     "delta_amount": { "type": "integer", "description": "Signed. What the account was charged." },
     "delta_cost_micro_usd": { "type": "integer", "default": 0, "description": "Signed. What it cost to serve." },
     "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
@@ -31,8 +31,24 @@
   },
   "allOf": [
     {
-      "if": { "properties": { "kind": { "const": "dishonor" } }, "required": ["kind"] },
+      "if": { "properties": { "kind": { "enum": ["issue", "release", "dishonor", "event"] } }, "required": ["kind"] },
       "then": { "properties": { "delta_amount": { "const": 0 } } }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "grant" } }, "required": ["kind"] },
+      "then": { "properties": { "delta_amount": { "minimum": 1 } } }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "capture" } }, "required": ["kind"] },
+      "then": { "properties": { "delta_amount": { "maximum": 0 } }, "required": ["authorization_id"] }
+    },
+    {
+      "if": { "properties": { "kind": { "enum": ["issue", "release"] } }, "required": ["kind"] },
+      "then": { "required": ["authorization_id"], "properties": { "meta": { "required": ["face_value"] } } }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "event" } }, "required": ["kind"] },
+      "then": { "properties": { "meta": { "required": ["event"] } }, "required": ["meta"] }
     },
     {
       "if": { "properties": { "kind": { "const": "adjust" } }, "required": ["kind"] },

@@ -68,15 +68,26 @@ table is incomplete.
 ## 3. State machine
 
 ```
-   request ──► issued ──────► captured ──► (adjusted)
-                 │  │
-                 │  ├───────► released
-                 │  └───────► expired
-                 │
-                 └──────────► dishonored
+   request ──┬─► issued ──────► captured ──► (adjusted)
+             │      │  │
+             │      │  ├──────► released
+             │      │  └──────► expired
+             │      │
+             ├──────┴─────────► dishonored
+             │
+             └─► pending_seal ─┬─► issued        (approved: quorum reached)
+                               ├─► dishonored    (rejected by an approver)
+                               └─► expired       (approval timeout)
 ```
 
-- `dishonored` is assigned at issue time only. An authorization that was issued cannot later be
+- `pending_seal` occurs only when a policy ladder resolves to `counter_seal` (see
+  `spec/policy.md` §3.6): the request is held for human agreement before any reservation takes
+  effect. The issue call MUST return immediately with this state rather than blocking; the caller
+  learns the outcome asynchronously. While pending, nothing is reserved and nothing may be
+  captured. Approval and rejection are themselves recorded in the register as `event` entries, so
+  that both seals — the requesting agent's and the approving human's — appear against the same
+  authorization.
+- `dishonored` is assigned before execution only, at issue time or on rejection of a held request. An authorization that was issued cannot later be
   dishonored; the action has already been permitted.
 - `captured` is terminal for the reservation. Later corrections MUST be appended as separate
   adjustment entries in the register, not by mutating the authorization.
@@ -109,7 +120,7 @@ A dishonor returns HTTP 200 with a decision body, **not** an HTTP error status:
 {
   "decision": "dishonored",
   "reason": "insufficient_balance",
-  "balance": 12,
+  "available": 12,
   "required": 47,
   "remedy": {
     "topup_url": "https://...",

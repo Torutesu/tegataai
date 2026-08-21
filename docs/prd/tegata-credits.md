@@ -185,7 +185,7 @@ Master Doc §4.3 の語彙をそのまま識別子に使う。ブランドと AP
 | `face_value` | int | 押さえた上限クレジット |
 | `state` | enum | §7.2 の状態機械 |
 | `maturity` | timestamptz | 既定 now+300s、上限 now+3600s |
-| `captured_credits` | int \| null | 実績 |
+| `captured_amount` | int \| null | 実績（確定クレジット） |
 | `cost_micro_usd` | int \| null | 実績原価 |
 | `dishonor_reason` | enum \| null | §7.5 |
 | `idempotency_key` | string | テナント内一意。24h 保持 |
@@ -197,7 +197,7 @@ Master Doc §4.3 の語彙をそのまま識別子に使う。ブランドと AP
 | `seq` | bigint（Subject 内で単調増加） |
 | `subject_id` | string |
 | `at` | timestamptz |
-| `kind` | enum: `issue` / `capture` / `release` / `dishonor` / `grant` / `expire` / `adjust` |
+| `kind` | enum: `grant` / `issue` / `capture` / `release` / `expire` / `dishonor` / `event` / `adjust` |
 | `delta_credits` | int（符号付き） |
 | `delta_cost_micro_usd` | int |
 | `authorization_id` | ULID \| null |
@@ -205,7 +205,16 @@ Master Doc §4.3 の語彙をそのまま識別子に使う。ブランドと AP
 | `meta` | jsonb |
 | `prev_hash` / `hash` | bytes（§12.3） |
 
-**不変条件**: `balance(subject) = Σ delta_credits over register_entry`。
+**台帳規約**（`spec/register.md` §3–4 が規範）: 保留は約定であって残高移動ではない。
+`issue` / `release` / 満期による `expire` / `dishonor` / `event` は `delta_credits = 0` で、
+保留額は `meta.face_value` に載る。残高が動くのは `grant` / `capture` / `adjust` /
+entitlement 失効の `expire` のみ。
+
+**不変条件**:
+- `balance = Σ delta_credits`
+- `reserved = Σ meta.face_value`（未終端 authorization の issue エントリ）
+- `available = balance − reserved`
+
 Edge のキャッシュ値がこれとずれた場合、Register が勝つ。
 
 #### `action_catalog`（テナントが定義するアクション）
@@ -286,6 +295,8 @@ AI アクションは**実行前に正確なコストが分からない**（出�
 ```
 
 - `issued` → `captured` / `released` / `expired` のみが遷移可能。`captured` から戻れない。
+- 規範仕様には `pending_seal`（承認保留）状態があるが、Credits v1 のラダーは `auto` のみで
+  この状態に入らない（`spec/authorization.md` §3）。
 - `expired` は保留を解放するだけで、実行が行われたかは分からない。テナントは maturity 内に
   必ず capture すること。maturity 超過後の capture は `409 authorization_matured` を返し、
   `adjust` エントリでの事後計上を促す。
@@ -319,7 +330,7 @@ AI アクションは**実行前に正確なコストが分からない**（出�
   "authorization_id": "01JXXX...",
   "decision": "authorized",
   "face_value": 47,
-  "balance_after_hold": 953,
+  "available_after_hold": 953,
   "maturity": "2026-08-21T04:05:00Z"
 }
 ```
@@ -329,7 +340,7 @@ AI アクションは**実行前に正確なコストが分からない**（出�
 {
   "decision": "dishonored",
   "reason": "insufficient_balance",
-  "balance": 12,
+  "available": 12,
   "required": 47,
   "remedy": {
     "topup_url": "https://pay.tegata.../t/01JYYY",
@@ -389,14 +400,14 @@ AI アクションは**実行前に正確なコストが分からない**（出�
 ```
 または実測クレジットを直接:
 ```jsonc
-{ "credits": 31, "cost_micro_usd": 620000 }
+{ "amount": 31, "cost_micro_usd": 620000 }
 ```
 
-- `captured_credits > face_value` の場合: 超過分を追加で引き落とす。残高が足りなければ
+- `captured_amount > face_value` の場合: 超過分を追加で引き落とす。残高が足りなければ
   `max_overdraft_credits` の範囲で負残高を許容し、`register_entry.meta.overdraft=true` を立てる。
   超えた場合も**捕捉は必ず成功させる**（実行はもう終わっているため拒否に意味がない）。
   代わりに `balance.overdrawn` イベントを発火する。
-- `captured_credits < face_value` の場合: 差分を自動解放。
+- `captured_amount < face_value` の場合: 差分を自動解放。
 
 ### 7.8 `POST /v1/authorizations/{id}/release`（解放）
 

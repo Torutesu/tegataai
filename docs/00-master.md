@@ -321,6 +321,8 @@ Select KK launch equation: **① Comps → ② Concept Doc → ③ GTM Prototype
 | `docs/prd/tegata-wallet.md` | Product B の要件定義（実装可能粒度） | JA | Phase 2 |
 | `docs/gtm/icp-interviews.md` | ICP ヒアリング設計と gate 判定基準 | JA | #8 |
 | `docs/gtm/margin-diagnostic.md` | margin 診断ツールの仕様（無料フック） | JA | #5 |
+| `docs/gtm/launch-storyboard.md` | ローンチ動画ストーリーボード + 合否自己判定 | JA | #7 |
+| `docs/gtm/lp-skeleton.md` | LP 骨子（Credits / Wallet、EN コピー確定稿） | JA/EN | #4 |
 | `templates/agent-spend-policy.md` | Agent Spend Policy Template（無料配布物・完成品） | EN | #6 |
 | `spec/authorization.md` | Authorization protocol（振出→捕捉→解放）の規範仕様 | EN | #3 |
 | `spec/policy.md` | Policy schema（Credits / Wallet 共通） | EN | #3 |
@@ -335,8 +337,8 @@ Select KK launch equation: **① Comps → ② Concept Doc → ③ GTM Prototype
 | 1 | 商標調査・ドメイン/ハンドル確保 | **未着手（Blocker）** |
 | 2 | ロゴ + 最小ブランドキット | 未着手 |
 | 3 | spec-first public repo | **仕様完了。公開整形と LICENSE 配置が残** |
-| 4 | LP 骨子（Credits / Wallet） | 未着手 |
+| 4 | LP 骨子（Credits / Wallet） | **骨子完了**（`docs/gtm/lp-skeleton.md`）。実装が残 |
 | 5 | margin 診断ツール | **仕様完了。実装が残** |
 | 6 | Agent Spend Policy Template | **完了** |
-| 7 | ローンチ動画 / ストーリーボード | 未着手（**gate の合否そのもの**） |
+| 7 | ローンチ動画 / ストーリーボード | **ストーリーボード完了**（`docs/gtm/launch-storyboard.md`）。拍1は診断ツール実装後、拍2/3 は Phase 1 最小実装後に撮影可 |
 | 8 | ICP ヒアリングリスト + 質問設計 | **質問設計完了。対象リスト作成が残** |

@@ -182,7 +182,8 @@ Credits では未使用だった語彙が、ここで全部使われる。これ
   部分的失効という概念を持たない（下流だけ生き残る状態を作らない）。
 - 失効は発行パートナー側のカード停止 API を呼ぶが、**TEGATA 側の判定は即座に効く**。
   パートナー API の遅延・失敗が失効を遅らせてはならない。
-- 失効は register に `kind=adjust` として記録され、以後の authorization は `subject_suspended` で不渡り。
+- 失効は register に `kind=event`（`meta.event = agent_revoked`、失効実行者と対象の下流一覧を含む）
+  として記録され、以後の authorization は `subject_suspended` で不渡り。
 
 ---
 
@@ -309,13 +310,13 @@ Master Doc §1.4-3「エージェントの経費規程」の中核。エージ�
 
 ### 8.1 動作
 
-`counter_seal` に到達した authorization は `pending_seal` 状態で保留される。
+ラダーが `counter_seal` に到達した要求は `pending_seal` 状態で保留される
+（`spec/authorization.md` §3 の規範状態）。保留中は**何も予約されない**。
 
 ```
-issued(pending_seal) ──► approved ──► issued ──► captured
-        │                                  
-        ├──► rejected ──► dishonored(policy_denied)
-        └──► timeout  ──► expired
+request ──► pending_seal ──┬─► issued（quorum 到達）──► captured
+                           ├─► dishonored（承認者が却下。reason=policy_denied）
+                           └─► expired（timeout 経過）
 ```
 
 - 承認先: Slack / Web / API。**メールは v1 では通知のみで、承認導線にしない**（なりすまし耐性）
@@ -348,7 +349,9 @@ issued(pending_seal) ──► approved ──► issued ──► captured
 - `delta_amount` は通貨の最小単位、`currency` 必須
 - `delta_cost_micro_usd` は使わない（0）。原価概念は受け取る側のもの
 - `meta` に `payee`, `purpose`, `rail`, `mandate_ref`, `agent_id`, `drawer` を格納
-- `counter_seal` の承認は独立した register エントリとして記録（`kind=adjust`, `meta.seal`）
+- `counter_seal` の承認・却下は `kind=event` の register エントリとして記録する
+  （`meta.event = seal_approved | seal_rejected`、承認者・時刻・手段を含む）。
+  同一 `authorization_id` に対して要求側と承認側の両エントリが並ぶことが「割印」の実体
 
 ### 9.2 監査で答えるべき4つの質問
 

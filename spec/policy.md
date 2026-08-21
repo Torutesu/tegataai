@@ -67,7 +67,7 @@ and the most restrictive outcome wins. Policies compose by intersection; there i
 | Field | Meaning |
 |---|---|
 | `per_action.max` | Ceiling on a single authorization's face value |
-| `per_period` | Ceiling on the sum settled within a rolling window, expressed as an ISO 8601 duration |
+| `per_period` | Ceiling on the sum settled within a rolling window, expressed as an ISO 8601 duration (days, hours, and minutes — `P1D`, `PT6H`; smaller units are not supported) |
 | `aggregate.max` | Lifetime ceiling for the subject under this policy |
 
 Periodic windows are rolling, not calendar-aligned, unless `align: "calendar"` is set. Rolling is

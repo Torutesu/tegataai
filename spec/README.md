@@ -24,4 +24,15 @@ Breaking changes will land without deprecation until a version is tagged.
 - **Degraded behaviour is declared, not discovered.** See `authorization.md` §7.
 - **Policies compose by intersection.** There is no override, because an override makes it
   impossible to say which rule is in force. See `policy.md` §3.1.
+- **A reservation is not a balance movement.** Holds carry `delta_amount = 0`; the balance moves
+  only when something settles. This is what keeps `available = balance − reserved` from
+  double-counting. See `register.md` §3–4.
 - **Authority only narrows along an endorsement chain.** See `authorization.md` §6.
+
+## Test vector
+
+[`examples/register.jsonl`](examples/register.jsonl) is not illustrative data: its hash chain is
+computed under the exact definition in `register.md` §5 (SHA-256 over the RFC 8785 canonical form
+of each entry with the `hash` field removed, `prev_hash` carried inside the entry). An
+implementation of the verifier should accept it unchanged, and reject it if any byte of any entry
+is altered.

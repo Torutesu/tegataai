@@ -15,7 +15,7 @@
       "description": "Absent in a credits context. ISO 4217 where the unit is money.",
       "type": "string", "pattern": "^[A-Z]{3}$"
     },
-    "state": { "enum": ["issued", "captured", "released", "expired", "dishonored"] },
+    "state": { "enum": ["pending_seal", "issued", "captured", "released", "expired", "dishonored"] },
     "maturity": { "type": "string", "format": "date-time" },
     "captured_amount": { "type": "integer", "minimum": 0 },
     "cost_micro_usd": { "type": "integer", "minimum": 0 },

@@ -27,7 +27,7 @@
           "type": "object",
           "required": ["window", "max"],
           "properties": {
-            "window": { "type": "string", "pattern": "^P(?!$)(\\d+D)?(T(\\d+H)?(\\d+M)?)?$", "description": "ISO 8601 duration." },
+            "window": { "type": "string", "pattern": "^P(?=.)(\\d+D)?(T(?=.)(\\d+H)?(\\d+M)?)?$", "description": "ISO 8601 duration." },
             "max": { "type": "integer", "minimum": 0 },
             "align": { "enum": ["rolling", "calendar"], "default": "rolling" }
           },
@@ -98,7 +98,7 @@
           "notify": { "type": "array", "items": { "type": "string" } },
           "approvers": { "type": "array", "items": { "type": "string" } },
           "quorum": { "type": "integer", "minimum": 1, "default": 1 },
-          "timeout": { "type": "string", "pattern": "^P(?!$)(\\d+D)?(T(\\d+H)?(\\d+M)?)?$" }
+          "timeout": { "type": "string", "pattern": "^P(?=.)(\\d+D)?(T(?=.)(\\d+H)?(\\d+M)?)?$" }
         },
         "allOf": [
           {
