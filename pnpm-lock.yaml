@@ -52,6 +52,9 @@ importers:
       '@tegata/store':
         specifier: workspace:*
         version: link:../store
+      '@tegata/verify':
+        specifier: workspace:*
+        version: link:../verify
       ajv:
         specifier: ^8.17.1
         version: 8.20.0

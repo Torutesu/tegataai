@@ -318,6 +318,26 @@ export class Store {
     });
   }
 
+  /**
+   * Lapse part of a grant. A capped rollover keeps what fits under the cap and lapses
+   * only the excess, so expiring the whole grant would destroy credits the tenant
+   * promised to carry.
+   */
+  expirePartialEntitlement(
+    tenantId: string, subjectId: string, ent: Entitlement, amount: Credits, reason: string,
+  ): RegisterEntry | null {
+    const lapse = Math.min(amount, ent.credits_remaining);
+    if (lapse <= 0) return null;
+    const remaining = ent.credits_remaining - lapse;
+    run(this.db,
+      'UPDATE entitlement SET credits_remaining = ?, status = ? WHERE entitlement_id = ?',
+      remaining, remaining === 0 ? 'expired' : 'active', ent.entitlement_id);
+    return this.append(tenantId, subjectId, {
+      kind: 'expire', delta_amount: -lapse, entitlement_id: ent.entitlement_id,
+      meta: { reason, lapsed: lapse, carried: remaining },
+    });
+  }
+
   reduceEntitlement(entitlementId: string, by: Credits): void {
     run(this.db, 'UPDATE entitlement SET credits_remaining = credits_remaining - ? WHERE entitlement_id = ?',
       by, entitlementId);

@@ -138,15 +138,17 @@ export async function deliverDue(store: Store, fetcher: Fetcher, limit = 50): Pr
   let delivered = 0, failed = 0;
   for (const ev of due) {
     const tenant = store.getTenant(ev.tenant_id);
-    if (tenant?.webhook_url == null || tenant.webhook_secret == null) {
+    const url = tenant?.webhook_url ?? null;
+    const secret = tenant?.webhook_secret ?? null;
+    if (url === null || secret === null) {
       store.markDelivered(ev.event_id);
       continue;
     }
     const body = JSON.stringify(envelope(ev));
     const ts = Math.floor(store.nowMs() / 1000);
-    const sig = createHmac('sha256', tenant.webhook_secret).update(`${ts}.${body}`).digest('hex');
+    const sig = createHmac('sha256', secret).update(`${ts}.${body}`).digest('hex');
     try {
-      const res = await fetcher(tenant.webhook_url, {
+      const res = await fetcher(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'tegata-signature': `t=${ts},v1=${sig}` },
         body,

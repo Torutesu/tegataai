@@ -88,3 +88,13 @@ capture が スタック残高を超えた場合、超過分は balance のみ�
 `/v1/usage` は `authorization_id` を返すようになり、直接計上も事後参照できる。
 
 **提案**: PRD §7.9 に「直接計上も authorization を生成する（保留を経ない）」を明記する。
+
+## 2026-08-21 / M5 / 実装欠陥（テストが検出）
+
+**発見**: `rollover_capped` の周期リフレッシュで、**繰越すべき分まで失効**させていた。
+`refreshOutcome` は carry と expire を正しく計算していたが、呼び出し側が
+`expireEntitlement`（全額失効）を呼んでいたため、cap 以内の繰越分が消えていた。
+**影響**: テナントが約束した繰越をこちらが破壊する。金額の直接的な損失。
+**採った手**: `expirePartialEntitlement` を store に追加。`expire` の分だけ失効させ、
+`carry` は残す。remaining が 0 になった場合のみ status を expired にする。
+テストは3方式（reset / rollover / rollover_capped）すべての残高を検証している。

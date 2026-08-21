@@ -110,10 +110,15 @@ function handleInvoicePaid(store: Store, tenantId: string, obj: Record<string, u
       } | undefined;
       if (rule === undefined) continue;
 
-      // Apply the refresh policy to what the previous period left behind.
+      // Apply the refresh policy to what the previous period left behind. Only the
+      // part that does not carry lapses — a capped rollover must keep what fits.
       for (const prev of store.entitlementsBySourceRef(tenantId, priceId)) {
         const outcome = refreshOutcome(prev, rule.refresh_policy, rule.rollover_cap_credits);
-        if (outcome.expire > 0) store.expireEntitlement(tenantId, subjectId, prev, `refresh_${rule.refresh_policy}`);
+        if (outcome.expire > 0) {
+          store.expirePartialEntitlement(
+            tenantId, subjectId, prev, outcome.expire, `refresh_${rule.refresh_policy}`,
+          );
+        }
       }
       const periodStart = numberOr(obj.period_start, store.nowMs() / 1000);
       const periodEnd = numberOr(obj.period_end, periodStart + 30 * 86_400);
