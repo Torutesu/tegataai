@@ -70,3 +70,21 @@ capture が スタック残高を超えた場合、超過分は balance のみ�
 正しく、`delta_credits` は Credits 専用に読める。エクスポートの列名は外部が検証に使うため、
 実装の都合で spec 側を変えるという選択肢は最初から無い。
 **提案**: 計画 §4 の DDL を `delta_amount` に訂正する。
+
+## 2026-08-21 / M3 / spec と PRD の緩み（実装で解消、spec は無変更）
+
+**発見**: `spec/register.md` §3 は capture を「予約済み authorization の約定」と定義し、
+`register-entry.schema.json` は capture に `authorization_id` を要求する。
+一方 PRD §7.9 の直接計上（`POST /v1/usage`）は authorization を作らない設計だった。
+実装すると**自分で公開したスキーマに適合しないエントリを吐く**ことが判明。
+
+**採った手**: 直接計上も **authorization を作る**。ただし保留を経ず、
+`state='captured'` として生まれた時点で約定済み。`issue` エントリは書かない
+（予約は存在しなかったので、書けば嘘になる。`reserved` は issue から導出されるため
+書かないことが正しい）。これでスキーマに適合し、かつ**register 上のあらゆる capture が
+監査人の辿れる先を持つ**。
+
+**評価**: spec と PRD の矛盾ではなく、PRD の記述が粗かった。実装の方が良くなった。
+`/v1/usage` は `authorization_id` を返すようになり、直接計上も事後参照できる。
+
+**提案**: PRD §7.9 に「直接計上も authorization を生成する（保留を経ない）」を明記する。

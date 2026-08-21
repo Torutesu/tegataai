@@ -71,8 +71,10 @@ export function assertEntry(entry: UnsealedEntry): void {
       throw new LedgerError(`kind '${entry.kind}' must record meta.face_value`);
     }
   }
-  if (entry.kind === 'capture' && entry.authorization_id === undefined && entry.meta.direct !== true) {
-    throw new LedgerError('capture must name its authorization unless it is a direct settlement');
+  if (entry.kind === 'capture' && entry.authorization_id === undefined) {
+    // Every settlement names an authorization, including a direct one, which is created
+    // already settled. An auditor following a capture must always find something.
+    throw new LedgerError('capture must name its authorization');
   }
   if (entry.kind === 'adjust' && entry.meta.corrects === undefined) {
     throw new LedgerError('adjust must reference the entry it corrects in meta.corrects');
