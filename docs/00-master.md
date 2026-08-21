@@ -334,6 +334,8 @@ Select KK launch equation: **① Comps → ② Concept Doc → ③ GTM Prototype
 | `docs/gtm/margin-diagnostic.md` | margin 診断ツールの仕様（無料フック） | JA | #5 |
 | `docs/gtm/launch-storyboard.md` | ローンチ動画ストーリーボード + 合否自己判定 | JA | #7 |
 | `docs/gtm/lp-skeleton.md` | LP 骨子（Credits / Wallet、EN コピー確定稿） | JA/EN | #4 |
+| `docs/gtm/icp-target-list.md` | ヒアリング対象リストと市場実態の調査結果 | JA | #8 |
+| `docs/gtm/outreach.md` | 接点設計とアウトリーチ文面 | JA/EN | #8 |
 | `templates/agent-spend-policy.md` | Agent Spend Policy Template（無料配布物・完成品） | EN | #6 |
 | `brand/` + `docs/brand/brand-kit.md` | ロゴ（割印）・カラートークン・タイポ・モチーフ規則 | JA | #2 |
 | `tools/margin-diagnostic/` | margin 診断ツール実装（単一HTML・送信ゼロ） | EN | #5 |
@@ -354,4 +356,4 @@ Select KK launch equation: **① Comps → ② Concept Doc → ③ GTM Prototype
 | 5 | margin 診断ツール | **実装完了**（`tools/margin-diagnostic/`、M-01〜M-07 検証済み）。公開時に別リポジトリへ移す |
 | 6 | Agent Spend Policy Template | **完了** |
 | 7 | ローンチ動画 / ストーリーボード | **ストーリーボード完了**（`docs/gtm/launch-storyboard.md`）。拍1は診断ツール実装後、拍2/3 は Phase 1 最小実装後に撮影可 |
-| 8 | ICP ヒアリングリスト + 質問設計 | **質問設計完了。対象リスト作成が残** |
+| 8 | ICP ヒアリングリスト + 質問設計 | **完了**（`icp-target-list.md` / `outreach.md`）。**Product B の gate 条件に改訂提案あり — 要判断** |
