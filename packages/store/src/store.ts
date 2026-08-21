@@ -71,8 +71,23 @@ export class Store {
     return one<TenantRow>(this.db, 'SELECT * FROM tenant WHERE secret_key_hash = ?', sha256Hex(secret));
   }
 
+  /**
+   * The only place a column name reaches SQL as text rather than as a bound parameter,
+   * so the set of names it will accept is fixed here. Nothing outside this list can be
+   * written, whatever the caller passes.
+   */
+  private static readonly TENANT_WRITABLE = new Set<keyof TenantRow>([
+    'name', 'secret_key_hash', 'credit_unit_micro_usd', 'degraded_mode',
+    'max_overdraft_credits', 'cost_table_pin', 'webhook_url', 'webhook_secret',
+    'low_balance_pct',
+  ]);
+
   updateTenant(tenantId: string, patch: Partial<TenantRow>): void {
-    const cols = Object.keys(patch).filter((k) => k !== 'tenant_id');
+    const cols = Object.keys(patch).filter((k) => Store.TENANT_WRITABLE.has(k as keyof TenantRow));
+    const rejected = Object.keys(patch).filter((k) => k !== 'tenant_id' && !Store.TENANT_WRITABLE.has(k as keyof TenantRow));
+    if (rejected.length > 0) {
+      throw new Error(`updateTenant: refusing to write unknown column(s): ${rejected.join(', ')}`);
+    }
     if (cols.length === 0) return;
     run(this.db, `UPDATE tenant SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE tenant_id = ?`,
       ...cols.map((c) => (patch as Record<string, unknown>)[c]), tenantId);

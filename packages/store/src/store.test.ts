@@ -186,3 +186,16 @@ describe('settlement windows', () => {
     expect(s.settledSince(T, 'u1', '2026-08-05T00:00:00.000Z')).toBe(25);
   });
 });
+
+describe('the one place a column name is not a bound parameter', () => {
+  it('writes the columns it knows and refuses anything else', () => {
+    const s = newStore();
+    s.updateTenant(T, { low_balance_pct: 35 });
+    expect(s.getTenant(T)!.low_balance_pct).toBe(35);
+
+    expect(() => s.updateTenant(T, { 'name = \'x\'; DROP TABLE register; --': 'y' } as never))
+      .toThrow(/unknown column/);
+    // The threat it exists for: the register is still there.
+    expect(s.db.prepare("SELECT name FROM sqlite_master WHERE name = 'register'").get()).toBeDefined();
+  });
+});

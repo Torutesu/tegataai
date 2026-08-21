@@ -22,18 +22,28 @@ const invoice = (over: Record<string, unknown> = {}): Record<string, unknown> =>
 
 const withRule = async (): Promise<Awaited<ReturnType<typeof harness>>> => {
   const h = await harness();
+  h.store.updateTenant(TENANT, { webhook_secret: WHSEC });
   h.store.db.prepare(
     'INSERT INTO credit_grant_rule (tenant_id,stripe_price_id,credits_per_period,refresh_policy,rollover_cap_credits,priority) VALUES (?,?,?,?,?,?)',
   ).run(TENANT, 'price_pro', 1000, 'reset', null, 10);
   return h;
 };
 
-const send = (h: Awaited<ReturnType<typeof harness>>, body: unknown) =>
-  h.app.inject({
+const WHSEC = 'whsec_test';
+
+/** Signed the way Stripe signs: over the exact bytes being sent. */
+const send = (h: Awaited<ReturnType<typeof harness>>, body: unknown) => {
+  const payload = JSON.stringify(body);
+  const t = Math.floor(h.store.nowMs() / 1000);
+  return h.app.inject({
     method: 'POST', url: '/v1/webhooks/stripe',
-    headers: { 'content-type': 'application/json', 'tegata-tenant': TENANT },
-    payload: JSON.stringify(body),
+    headers: {
+      'content-type': 'application/json', 'tegata-tenant': TENANT,
+      'stripe-signature': signatureFor(WHSEC, t, payload),
+    },
+    payload,
   });
+};
 
 describe('stripe entitlement sync', () => {
   it('grants on invoice.paid, not on subscription creation', async () => {
@@ -77,6 +87,7 @@ describe('stripe entitlement sync', () => {
 
   it('carries the remainder under a rollover policy', async () => {
     const h = await harness();
+    h.store.updateTenant(TENANT, { webhook_secret: WHSEC });
     h.store.db.prepare(
       'INSERT INTO credit_grant_rule (tenant_id,stripe_price_id,credits_per_period,refresh_policy,rollover_cap_credits,priority) VALUES (?,?,?,?,?,?)',
     ).run(TENANT, 'price_pro', 1000, 'rollover', null, 10);
@@ -89,6 +100,7 @@ describe('stripe entitlement sync', () => {
 
   it('caps the carry under rollover_capped and lapses the excess', async () => {
     const h = await harness();
+    h.store.updateTenant(TENANT, { webhook_secret: WHSEC });
     h.store.db.prepare(
       'INSERT INTO credit_grant_rule (tenant_id,stripe_price_id,credits_per_period,refresh_policy,rollover_cap_credits,priority) VALUES (?,?,?,?,?,?)',
     ).run(TENANT, 'price_pro', 1000, 'rollover_capped', 300, 10);

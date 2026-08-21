@@ -25,6 +25,21 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   const { store } = opts;
   const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 1_048_576 });
 
+  /**
+   * A webhook signature covers the bytes the sender signed. Re-serialising a parsed
+   * body produces different bytes for the same document — different whitespace, and
+   * no guarantee of key order — so the raw text is kept for the routes that verify one.
+   */
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) => {
+    (req as FastifyRequest & { rawBody?: string }).rawBody = body as string;
+    if ((body as string).length === 0) { done(null, {}); return; }
+    try {
+      done(null, JSON.parse(body as string) as unknown);
+    } catch {
+      done(err.validation('Body is not valid JSON'), undefined);
+    }
+  });
+
   app.setErrorHandler((error, _req, reply) => {
     if (error instanceof TegataError) return reply.status(error.status).send(error.toJSON());
     const status = (error as { statusCode?: number }).statusCode;
@@ -301,17 +316,25 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   // ------------------------------------------------------------------- stripe
 
+  /**
+   * This endpoint mints credits, so it authenticates before it does anything else.
+   * An unknown tenant, a tenant with no configured secret, and a missing signature are
+   * all 401 — there is no path through here that trusts the caller. It answers the same
+   * way for an unknown tenant as for a missing signature, so it cannot be used to
+   * enumerate which tenant ids exist.
+   */
   app.post('/v1/webhooks/stripe', async (req, reply) => {
     const tenantId = (req.headers['tegata-tenant'] ?? '') as string;
     const tenant = store.getTenant(tenantId);
-    if (tenant === undefined) throw err.notFound('Tenant', tenantId);
-    const raw = (req.body ?? {}) as JsonObject;
-    const secret = tenant.webhook_secret;
+    const secret = tenant?.webhook_secret ?? null;
     const sig = req.headers['stripe-signature'];
-    if (secret !== null && typeof sig === 'string') {
-      verifyStripeSignature(JSON.stringify(raw), sig, secret, store.nowMs());
+    if (tenant === undefined || secret === null || typeof sig !== 'string') {
+      throw err.unauthorized();
     }
-    const result = handleStripeEvent(store, tenantId, raw);
+    const raw = (req as FastifyRequest & { rawBody?: string }).rawBody ?? '';
+    verifyStripeSignature(raw, sig, secret, store.nowMs());
+
+    const result = handleStripeEvent(store, tenantId, (req.body ?? {}) as JsonObject);
     return reply.status(200).send(result);
   });
 
