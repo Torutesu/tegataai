@@ -43,6 +43,16 @@ importers:
       '@tegata/core':
         specifier: workspace:*
         version: link:../core
+    devDependencies:
+      '@tegata/server':
+        specifier: workspace:*
+        version: link:../server
+      '@tegata/store':
+        specifier: workspace:*
+        version: link:../store
+      fastify:
+        specifier: ^5.2.0
+        version: 5.12.1
 
   packages/server:
     dependencies:
