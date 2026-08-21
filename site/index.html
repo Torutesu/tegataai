@@ -150,57 +150,18 @@
         data-slow="That was quick. Give it a minute and try again."
         data-bad="That address did not look right. Check it and try again?"
         data-offline="Could not reach us just now. Try again in a moment.">
-    <label for="email" style="position:absolute;left:-9999px">Email address</label>
+    <label for="email" class="visually-hidden">Email address</label>
     <input id="email" type="email" name="email" required autocomplete="email" placeholder="you@yourapp.com">
-    <label for="cw" style="position:absolute;left:-9999px" aria-hidden="true">Leave this empty</label>
+    <label for="cw" class="visually-hidden" aria-hidden="true">Leave this empty</label>
     <input id="cw" type="text" name="company_website" tabindex="-1" autocomplete="off"
-           style="position:absolute;left:-9999px" aria-hidden="true">
+           class="visually-hidden" aria-hidden="true">
     <button class="btn primary" type="submit">Join the waitlist</button>
   </form>
-  <p class="form-status quiet" role="status" aria-live="polite" style="margin-top:.7rem"></p>
-  <p class="quiet" style="margin-top:.9rem">One email field, because everything else is a
+  <p class="form-status quiet" role="status" aria-live="polite"></p>
+  <p class="quiet form-note">One email field, because everything else is a
   question better asked in a conversation.</p>
 </section>
-<script type="module">
-  // The one piece of script on this page. Without it the form still posts and the
-  // browser navigates to the API's reply, which works but reads badly.
-  const API = document.currentScript?.dataset.api ?? '';
-  for (const form of document.querySelectorAll('form.waitlist')) {
-    const status = form.parentElement.querySelector('.form-status');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const button = form.querySelector('button');
-      const email = form.querySelector('input[type=email]').value;
-      button.disabled = true;
-      status.textContent = form.dataset.sending;
-      try {
-        const res = await fetch(`${form.action}`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            locale: document.documentElement.lang,
-            source: 'site',
-            company_website: form.querySelector('input[name=company_website]').value,
-          }),
-        });
-        if (res.status === 202) {
-          form.hidden = true;
-          status.textContent = form.dataset.done;
-        } else if (res.status === 429) {
-          status.textContent = form.dataset.slow;
-          button.disabled = false;
-        } else {
-          status.textContent = form.dataset.bad;
-          button.disabled = false;
-        }
-      } catch {
-        status.textContent = form.dataset.offline;
-        button.disabled = false;
-      }
-    });
-  }
-</script>
+<script type="module" src="/waitlist.js"></script>
 </main>
 
 <footer>

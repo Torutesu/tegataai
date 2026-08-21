@@ -18,3 +18,20 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
+
+  # The site's policy is only worth having if the pages still work under it, so the
+  # pages are loaded with the real headers applied and any violation fails the build.
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify:site
+      - run: npx playwright install --with-deps chromium
+      - run: pnpm verify:csp

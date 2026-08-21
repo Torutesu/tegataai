@@ -12,12 +12,15 @@
     "test": "vitest run",
     "verify:spec": "node scripts/verify-spec.mjs",
     "verify:purity": "node scripts/check-purity.mjs",
-    "verify": "pnpm typecheck && pnpm lint && pnpm verify:purity && pnpm verify:spec && pnpm test",
+    "verify": "pnpm typecheck && pnpm lint && pnpm verify:purity && pnpm verify:spec && pnpm verify:site && pnpm test",
     "dev": "tsx packages/server/src/main.ts",
     "bootstrap": "tsx packages/server/src/cli.ts bootstrap",
     "perf": "tsx packages/server/perf/authorize.mts",
     "verify:acceptance": "vitest run packages/server/src/smoke.test.ts packages/sdk packages/verify",
-    "tegata-verify": "tsx packages/verify/src/cli.ts"
+    "tegata-verify": "tsx packages/verify/src/cli.ts",
+    "verify:site": "node scripts/check-site.mjs",
+    "site": "cd site && python3 -m http.server 8080",
+    "verify:csp": "node scripts/check-csp.mjs"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
@@ -29,7 +32,8 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
-    "@types/autocannon": "^7.12.6"
+    "@types/autocannon": "^7.12.6",
+    "playwright": "^1.56.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
