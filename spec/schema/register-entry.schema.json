@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tegata.ai/spec/schema/register-entry.schema.json",
+  "title": "Register entry",
+  "description": "One append-only line of the book of record. Balances are the sum of delta_amount.",
+  "type": "object",
+  "required": ["seq", "subject_id", "at", "kind", "delta_amount", "hash"],
+  "additionalProperties": false,
+  "properties": {
+    "seq": { "type": "integer", "minimum": 0, "description": "Strictly increasing within a subject. No gaps." },
+    "subject_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "at": { "type": "string", "format": "date-time" },
+    "kind": { "enum": ["grant", "issue", "capture", "release", "expire", "dishonor", "adjust"] },
+    "delta_amount": { "type": "integer", "description": "Signed. What the account was charged." },
+    "delta_cost_micro_usd": { "type": "integer", "default": 0, "description": "Signed. What it cost to serve." },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "authorization_id": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$" },
+    "entitlement_id": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$" },
+    "policy_ref": {
+      "type": "object",
+      "required": ["policy_id", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": { "type": "string" },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "meta": { "type": "object", "description": "Free-form. Must not contain personal data." },
+    "prev_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "dishonor" } }, "required": ["kind"] },
+      "then": { "properties": { "delta_amount": { "const": 0 } } }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "adjust" } }, "required": ["kind"] },
+      "then": { "properties": { "meta": { "required": ["corrects"] } }, "required": ["meta"] }
+    }
+  ]
+}

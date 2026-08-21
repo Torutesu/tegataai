@@ -1,0 +1,26 @@
+{
+  "policy_id": "eng-research-agents",
+  "version": 3,
+  "applies_to": { "subject": "agent:researcher-*", "labels": { "team": "platform" } },
+  "limits": {
+    "per_action": { "max": 500 },
+    "per_period": { "window": "P1D", "max": 20000 },
+    "aggregate": { "max": 200000 }
+  },
+  "scope": {
+    "actions": { "allow": ["search.query", "http.fetch", "chat.completion"] },
+    "providers": { "allow": ["anthropic", "openai"], "deny": ["*"] },
+    "merchants": { "allow_categories": ["saas", "data"], "deny": ["*.gambling"] }
+  },
+  "schedule": {
+    "allow": [{ "days": "MON-FRI", "from": "08:00", "to": "20:00", "tz": "Asia/Tokyo" }]
+  },
+  "purpose": { "require": true, "allowed": ["research", "eval"] },
+  "ladder": [
+    { "up_to": 1000, "decision": "auto" },
+    { "up_to": 10000, "decision": "notify", "notify": ["team:platform"] },
+    { "decision": "counter_seal", "approvers": ["role:finance"], "quorum": 1, "timeout": "PT4H" }
+  ],
+  "degraded": "deny",
+  "overdraft": { "max": 0 }
+}

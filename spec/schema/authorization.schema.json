@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tegata.ai/spec/schema/authorization.schema.json",
+  "title": "Authorization",
+  "description": "A reserved promise to pay: a face value held before an action runs, settled or released after.",
+  "type": "object",
+  "required": ["authorization_id", "subject_id", "action", "face_value", "state", "maturity"],
+  "additionalProperties": false,
+  "properties": {
+    "authorization_id": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$" },
+    "subject_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "action": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "face_value": { "type": "integer", "minimum": 0 },
+    "currency": {
+      "description": "Absent in a credits context. ISO 4217 where the unit is money.",
+      "type": "string", "pattern": "^[A-Z]{3}$"
+    },
+    "state": { "enum": ["issued", "captured", "released", "expired", "dishonored"] },
+    "maturity": { "type": "string", "format": "date-time" },
+    "captured_amount": { "type": "integer", "minimum": 0 },
+    "cost_micro_usd": { "type": "integer", "minimum": 0 },
+    "dishonor_reason": { "$ref": "#/$defs/dishonorReason" },
+    "provisional": { "type": "boolean", "default": false },
+    "endorsement_chain": { "type": "array", "items": { "$ref": "#/$defs/endorsement" } },
+    "context": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "state": { "const": "dishonored" } }, "required": ["state"] },
+      "then": { "required": ["dishonor_reason"] },
+      "else": { "not": { "required": ["dishonor_reason"] } }
+    },
+    {
+      "if": { "properties": { "state": { "const": "captured" } }, "required": ["state"] },
+      "then": { "required": ["captured_amount"] }
+    }
+  ],
+  "$defs": {
+    "dishonorReason": {
+      "enum": [
+        "insufficient_balance",
+        "entitlement_expired",
+        "policy_denied",
+        "budget_exhausted_period",
+        "rate_limited",
+        "subject_suspended",
+        "action_unknown",
+        "service_degraded"
+      ]
+    },
+    "endorsement": {
+      "description": "Re-delegation of authority. Authority may only narrow as it is passed along.",
+      "type": "object",
+      "required": ["endorser", "endorsee", "face_value", "maturity"],
+      "additionalProperties": false,
+      "properties": {
+        "endorser": { "type": "string" },
+        "endorsee": { "type": "string" },
+        "face_value": { "type": "integer", "minimum": 0 },
+        "maturity": { "type": "string", "format": "date-time" },
+        "scope": { "type": "array", "items": { "type": "string" } },
+        "signature": { "type": "string" }
+      }
+    }
+  }
+}

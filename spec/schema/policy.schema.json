@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tegata.ai/spec/schema/policy.schema.json",
+  "title": "Spend policy",
+  "description": "What a subject may spend, on what, when, and above which threshold a human must agree. Policies compose by intersection; the most restrictive outcome wins.",
+  "type": "object",
+  "required": ["policy_id", "version", "applies_to"],
+  "additionalProperties": false,
+  "properties": {
+    "policy_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "version": { "type": "integer", "minimum": 1 },
+    "applies_to": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "subject": { "type": "string", "description": "Identifier or glob pattern." },
+        "labels": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "per_action": { "$ref": "#/$defs/ceiling" },
+        "per_period": {
+          "type": "object",
+          "required": ["window", "max"],
+          "properties": {
+            "window": { "type": "string", "pattern": "^P(?!$)(\\d+D)?(T(\\d+H)?(\\d+M)?)?$", "description": "ISO 8601 duration." },
+            "max": { "type": "integer", "minimum": 0 },
+            "align": { "enum": ["rolling", "calendar"], "default": "rolling" }
+          },
+          "additionalProperties": false
+        },
+        "aggregate": { "$ref": "#/$defs/ceiling" }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actions": { "$ref": "#/$defs/allowDeny" },
+        "providers": { "$ref": "#/$defs/allowDeny" },
+        "merchants": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allow": { "type": "array", "items": { "type": "string" } },
+            "deny": { "type": "array", "items": { "type": "string" } },
+            "allow_categories": { "type": "array", "items": { "type": "string" } },
+            "deny_categories": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "schedule": {
+      "type": "object",
+      "required": ["allow"],
+      "additionalProperties": false,
+      "properties": {
+        "allow": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["from", "to", "tz"],
+            "additionalProperties": false,
+            "properties": {
+              "days": { "type": "string", "description": "e.g. MON-FRI, SAT,SUN" },
+              "from": { "type": "string", "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+              "to": { "type": "string", "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+              "tz": { "type": "string", "description": "IANA timezone." }
+            }
+          }
+        }
+      }
+    },
+    "purpose": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "require": { "type": "boolean", "default": false },
+        "allowed": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "ladder": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered escalation. The final rung omits up_to and acts as the catch-all.",
+      "items": {
+        "type": "object",
+        "required": ["decision"],
+        "additionalProperties": false,
+        "properties": {
+          "up_to": { "type": "integer", "minimum": 0 },
+          "decision": { "enum": ["auto", "notify", "counter_seal", "deny"] },
+          "notify": { "type": "array", "items": { "type": "string" } },
+          "approvers": { "type": "array", "items": { "type": "string" } },
+          "quorum": { "type": "integer", "minimum": 1, "default": 1 },
+          "timeout": { "type": "string", "pattern": "^P(?!$)(\\d+D)?(T(\\d+H)?(\\d+M)?)?$" }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "decision": { "const": "counter_seal" } }, "required": ["decision"] },
+            "then": { "required": ["approvers"] }
+          }
+        ]
+      }
+    },
+    "degraded": { "enum": ["allow", "allow_cheap_only", "deny"] },
+    "overdraft": {
+      "type": "object",
+      "required": ["max"],
+      "additionalProperties": false,
+      "properties": { "max": { "type": "integer", "minimum": 0 } }
+    }
+  },
+  "$defs": {
+    "ceiling": {
+      "type": "object",
+      "required": ["max"],
+      "properties": { "max": { "type": "integer", "minimum": 0 } }
+    },
+    "allowDeny": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allow": { "type": "array", "items": { "type": "string" } },
+        "deny": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "authorization_id": "01JXQ8Z3T4KM9V2B7CDEFGHJKM",
+  "subject_id": "user_8f21",
+  "action": "chat.completion",
+  "face_value": 47,
+  "state": "issued",
+  "maturity": "2026-08-21T04:05:00.000Z",
+  "provisional": false,
+  "context": { "feature": "long_document_summary", "surface": "web" }
+}

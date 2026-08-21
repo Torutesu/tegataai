@@ -1,0 +1,15 @@
+{
+  "policy_id": "consumer-default",
+  "version": 1,
+  "applies_to": { "subject": "user_*" },
+  "limits": {
+    "per_action": { "max": 400 },
+    "per_period": { "window": "P1D", "max": 3000, "align": "rolling" }
+  },
+  "scope": {
+    "actions": { "allow": ["chat.completion", "chat.completion.mini", "image.generate"] }
+  },
+  "ladder": [{ "decision": "auto" }],
+  "degraded": "allow",
+  "overdraft": { "max": 200 }
+}

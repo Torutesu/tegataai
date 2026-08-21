@@ -1,0 +1,29 @@
+{
+  "authorization_id": "01JXQ900CDEFGHJKMNP4R6TVWX",
+  "subject_id": "org_acme",
+  "action": "search.query",
+  "face_value": 120,
+  "currency": "USD",
+  "state": "captured",
+  "maturity": "2026-08-21T06:00:00.000Z",
+  "captured_amount": 86,
+  "cost_micro_usd": 860000,
+  "endorsement_chain": [
+    {
+      "endorser": "human:kaori@acme.example",
+      "endorsee": "agent:orchestrator-7",
+      "face_value": 2000,
+      "maturity": "2026-08-21T12:00:00.000Z",
+      "scope": ["search.query", "http.fetch", "chat.completion"],
+      "signature": "z58Dq7Xk..."
+    },
+    {
+      "endorser": "agent:orchestrator-7",
+      "endorsee": "agent:researcher-2",
+      "face_value": 500,
+      "maturity": "2026-08-21T06:00:00.000Z",
+      "scope": ["search.query", "http.fetch"],
+      "signature": "z9fT1Bq..."
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "authorization_id": "01JXQ8ZB1MN4P6R8STVWXYZ234",
+  "subject_id": "user_8f21",
+  "action": "chat.completion",
+  "face_value": 0,
+  "state": "dishonored",
+  "maturity": "2026-08-21T04:05:00.000Z",
+  "dishonor_reason": "insufficient_balance"
+}
