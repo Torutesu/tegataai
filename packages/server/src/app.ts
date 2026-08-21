@@ -52,6 +52,17 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   // a preflight to come back first. That round trip was the largest part of the time
   // between pressing the button and the confirmation appearing. Accepting the body here
   // is what makes it possible; nothing about how it is read changes.
+  /**
+   * A form with no script behind it posts like this. That happens whenever waitlist.js
+   * does not run — script disabled, a blocked request, a host serving .js under a
+   * content type that stops it being a module — and it used to end in a 500 with the
+   * address dropped. The page is meant to degrade to a plain form post, so it has to be
+   * a body the server reads.
+   */
+  app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (_req, body, done) => {
+    done(null, Object.fromEntries(new URLSearchParams(body as string)));
+  });
+
   app.addContentTypeParser('text/plain', { parseAs: 'string' }, (_req, body, done) => {
     const text = body as string;
     if (text.length === 0) { done(null, {}); return; }
@@ -164,10 +175,21 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   app.post('/v1/waitlist', async (req, reply) => {
     if (!corsFor(req, reply)) return reply.status(403).send({ error: { code: 'forbidden_origin' } });
 
+    /**
+     * A form post lands the person on this response, so it answers in a sentence rather
+     * than in JSON. Everything else about the route is identical — this decides how the
+     * answer reads, never what it says.
+     */
+    const posted_by_a_form = (req.headers['content-type'] ?? '').startsWith('application/x-www-form-urlencoded');
+    const accepted = (): FastifyReply => (posted_by_a_form
+      ? reply.status(202).type('text/plain; charset=utf-8')
+        .send('You are on the list. We will write when there is something to try.\n')
+      : reply.status(202).send({ ok: true }));
+
     const body = (req.body ?? {}) as Record<string, unknown>;
     // A field no person fills in. Bots fill in everything.
     if (typeof body.company_website === 'string' && body.company_website.length > 0) {
-      return reply.status(202).send({ ok: true });
+      return accepted();
     }
 
     const caller = (req.headers['cf-connecting-ip'] as string | undefined)
@@ -186,6 +208,10 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     if (!check.ok) {
       // The one case where saying what is wrong helps the person rather than a prober:
       // they typed their own address and can see it on screen.
+      if (posted_by_a_form) {
+        return reply.status(400).type('text/plain; charset=utf-8')
+          .send('That address did not look right. Go back and check it?\n');
+      }
       return reply.status(400).send({ error: { code: 'invalid_email', reason: check.reason } });
     }
 
@@ -198,7 +224,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     });
     req.log?.info({ waitlist: redactEmail(check.normalised), source }, 'waitlist signup');
     // Always the same answer, whether or not this address was already known.
-    return reply.status(202).send({ ok: true });
+    return accepted();
   });
 
   app.get('/v1/waitlist/export', async (req, reply) => {

@@ -21,6 +21,9 @@ jobs:
 
   # The site's policy is only worth having if the pages still work under it, so the
   # pages are loaded with the real headers applied and any violation fails the build.
+  # The end-to-end run goes further: the real server, the real headers, a real browser
+  # pressing the button — the seam where the form and the server are configured
+  # separately and each looks fine on its own.
   site:
     runs-on: ubuntu-latest
     steps:
@@ -35,3 +38,4 @@ jobs:
       - run: pnpm verify:site
       - run: npx playwright install --with-deps chromium
       - run: pnpm verify:csp
+      - run: pnpm verify:e2e

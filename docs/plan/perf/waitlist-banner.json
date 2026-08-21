@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-08-21T07:30:07.444Z",
+  "measured_at": "2026-08-21T07:50:41.291Z",
   "node": "v22.22.2",
   "scope": "Chromium against a local API with a fixed delay per reply. Loopback, so no DNS, TCP or TLS setup is included — the preconnect the page also does cannot show here.",
   "runs_per_arm": 9,
@@ -7,7 +7,7 @@
   "measurements": [
     {
       "simulated_rtt_ms": 20,
-      "saved_ms": 26,
+      "saved_ms": 29,
       "arms": [
         {
           "arm": "text/plain (shipped)",
@@ -15,20 +15,20 @@
             "POST"
           ],
           "time_to_confirmation_ms": {
-            "min": 58,
-            "median": 68,
-            "max": 96
+            "min": 51,
+            "median": 62,
+            "max": 80
           },
           "samples": [
+            51,
             58,
+            59,
+            60,
+            62,
             65,
-            66,
-            66,
             68,
-            70,
             75,
-            88,
-            96
+            80
           ]
         },
         {
@@ -38,27 +38,27 @@
             "POST"
           ],
           "time_to_confirmation_ms": {
-            "min": 84,
-            "median": 94,
-            "max": 103
+            "min": 68,
+            "median": 91,
+            "max": 99
           },
           "samples": [
-            84,
+            68,
+            75,
+            80,
             85,
-            85,
-            92,
+            91,
+            93,
             94,
-            97,
-            98,
-            101,
-            103
+            99,
+            99
           ]
         }
       ]
     },
     {
       "simulated_rtt_ms": 60,
-      "saved_ms": 67,
+      "saved_ms": 71,
       "arms": [
         {
           "arm": "text/plain (shipped)",
@@ -66,20 +66,20 @@
             "POST"
           ],
           "time_to_confirmation_ms": {
-            "min": 103,
-            "median": 110,
-            "max": 115
+            "min": 92,
+            "median": 106,
+            "max": 118
           },
           "samples": [
-            103,
+            92,
+            100,
+            104,
             105,
-            109,
-            109,
-            110,
-            111,
-            111,
-            114,
-            115
+            106,
+            112,
+            113,
+            115,
+            118
           ]
         },
         {
@@ -89,27 +89,27 @@
             "POST"
           ],
           "time_to_confirmation_ms": {
-            "min": 169,
+            "min": 163,
             "median": 177,
-            "max": 190
+            "max": 181
           },
           "samples": [
-            169,
-            176,
+            163,
+            170,
+            173,
+            173,
             177,
-            177,
-            177,
-            178,
             179,
-            183,
-            190
+            180,
+            181,
+            181
           ]
         }
       ]
     },
     {
       "simulated_rtt_ms": 150,
-      "saved_ms": 157,
+      "saved_ms": 151,
       "arms": [
         {
           "arm": "text/plain (shipped)",
@@ -117,20 +117,20 @@
             "POST"
           ],
           "time_to_confirmation_ms": {
-            "min": 199,
-            "median": 207,
-            "max": 217
+            "min": 188,
+            "median": 205,
+            "max": 213
           },
           "samples": [
-            199,
-            203,
-            204,
+            188,
+            190,
+            192,
             205,
-            207,
+            205,
+            205,
+            205,
             209,
-            210,
-            216,
-            217
+            213
           ]
         },
         {
@@ -140,20 +140,20 @@
             "POST"
           ],
           "time_to_confirmation_ms": {
-            "min": 343,
-            "median": 364,
-            "max": 375
+            "min": 339,
+            "median": 356,
+            "max": 369
           },
           "samples": [
-            343,
-            348,
-            349,
-            363,
-            364,
-            364,
-            369,
-            371,
-            375
+            339,
+            346,
+            353,
+            355,
+            356,
+            358,
+            361,
+            362,
+            369
           ]
         }
       ]

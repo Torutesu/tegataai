@@ -157,6 +157,9 @@
     <label for="cw" class="visually-hidden" aria-hidden="true">Leave this empty</label>
     <input id="cw" type="text" name="company_website" tabindex="-1" autocomplete="off"
            class="visually-hidden" aria-hidden="true">
+    <!-- Sent by the script and by a plain form post alike, so both carry the same fields. -->
+    <input type="hidden" name="source" value="site">
+    <input type="hidden" name="locale" value="en">
     <button class="btn primary" type="submit">Join the waitlist</button>
   </form>
   <p class="form-status quiet" role="status" aria-live="polite"></p>

@@ -123,8 +123,12 @@ margin-diagnostic/
 - [ ] `site/` をデプロイ、`_headers` / `_redirects` が効いていること
 - [x] ~~CSP 検証~~ → `pnpm verify:csp` が CI で回る。
       `_headers` を実際に適用した状態で全ページを読み込み、違反があれば fail する
+- [x] ~~フォームが実際に届くか~~ → `pnpm verify:e2e` が CI で回る。
+      実サーバ・実 `_headers`・実ブラウザでボタンを押し、行が入るところまで確認する。
+      **スクリプトを無効にした経路も含む**（これは実装が壊れていることを実際に見つけた）
 - [ ] `/tool/` が `connect-src 'none'` で、ネットワークタブが空であること
-- [ ] `.js` が `text/javascript` で返ること（フォームが動くかで分かる）
+- [ ] `.js` が `text/javascript` で返ること（`pnpm verify:e2e` が同じ失敗をローカルで再現する。
+      本番では、送信して**遷移せずに**確認文が出れば module として読み込まれている）
 - [ ] OGP が X / Slack で展開されること
 - [ ] Lighthouse 全4ページ 100（現状の実測値）
 
@@ -133,6 +137,7 @@ margin-diagnostic/
 - [ ] `/data` が永続ボリューム
 - [ ] `pnpm bootstrap` 実行、secret key 保管
 - [ ] `POST /v1/waitlist` を**本番の LP から**実際に送信して 202 が返ること
+      （`TEGATA_SITE_ORIGINS` が違っていると、ブラウザには「接続できませんでした」としか出ない）
 - [ ] `GET /v1/waitlist/count` がテナント鍵で引けること
 - [ ] Stripe webhook を使うなら、**テナントに webhook secret を設定**すること
       （未設定なら 401 になるので事故にはならないが、連携が黙って動かない）

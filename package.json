@@ -21,7 +21,8 @@
     "verify:site": "node scripts/check-site.mjs",
     "site": "cd site && python3 -m http.server 8080",
     "verify:csp": "node scripts/check-csp.mjs",
-    "measure:banner": "node scripts/measure-banner.mjs"
+    "measure:banner": "node scripts/measure-banner.mjs",
+    "verify:e2e": "node scripts/e2e-waitlist.mjs"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",

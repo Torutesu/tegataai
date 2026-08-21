@@ -154,6 +154,47 @@ describe('what it refuses', () => {
     await r.close();
   });
 
+  /**
+   * The page is meant to work with no script behind it. Without a parser for what a
+   * plain form posts, this route answered 500 and dropped the address — and nothing in
+   * the browser would have said so.
+   */
+  it('accepts a plain form post, and answers it in a sentence', async () => {
+    const r = await rig();
+    const res = await r.app.inject({ method: 'POST', url: '/v1/waitlist',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      payload: 'email=nojs%40example.com&company_website=&locale=en&source=site' });
+    expect(res.statusCode).toBe(202);
+    expect(res.headers['content-type']).toContain('text/plain');
+    expect(res.body).toContain('You are on the list');
+    expect(r.store.waitlistEntries()[0]!.email).toBe('nojs@example.com');
+    await r.close();
+  });
+
+  it('tells a form post what was wrong with the address, in the same voice', async () => {
+    const r = await rig();
+    const res = await r.app.inject({ method: 'POST', url: '/v1/waitlist',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      payload: 'email=not-an-address' });
+    expect(res.statusCode).toBe(400);
+    expect(res.headers['content-type']).toContain('text/plain');
+    expect(res.body).toContain('did not look right');
+    expect(r.store.waitlistCount()).toBe(0);
+    await r.close();
+  });
+
+  it('keeps the honeypot silent for a form post too', async () => {
+    const r = await rig();
+    const res = await r.app.inject({ method: 'POST', url: '/v1/waitlist',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      payload: 'email=bot%40example.com&company_website=http%3A%2F%2Fspam' });
+    // Same 202 and the same words as a real signup; nothing stored.
+    expect(res.statusCode).toBe(202);
+    expect(res.body).toContain('You are on the list');
+    expect(r.store.waitlistCount()).toBe(0);
+    await r.close();
+  });
+
   it('swallows a bot that fills in the field no person can see', async () => {
     const r = await rig();
     const res = await r.post({ email: 'bot@example.com', company_website: 'http://spam' });

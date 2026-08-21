@@ -3,8 +3,10 @@
  * so the content policy can refuse inline script outright — a policy with
  * 'unsafe-inline' in it is not refusing much.
  *
- * Without it the form still posts; the browser just navigates to the API's reply,
- * which works and reads badly. Everything here is presentation.
+ * Without it the form still posts — the browser sends it as a plain form post and lands
+ * on the API's one-sentence reply. That path is tested (scripts/e2e-waitlist.mjs runs the
+ * page with script disabled), because it is the path someone gets when this file fails to
+ * load and nothing on screen would say so. Everything here is presentation.
  *
  * The confirmation is what the person is waiting for, so the time to it is the number
  * that matters, not the time the server spends. Two things used to dominate it and
@@ -47,7 +49,6 @@ for (const form of document.querySelectorAll('form.waitlist')) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const button = form.querySelector('button');
-    const email = input.value;
     button.disabled = true;
     status.textContent = form.dataset.sending;
 
@@ -63,12 +64,10 @@ for (const form of document.querySelectorAll('form.waitlist')) {
         // body is still JSON and the server still reads it as JSON.
         headers: { 'content-type': 'text/plain;charset=UTF-8' },
         signal: deadline(),
-        body: JSON.stringify({
-          email,
-          locale: document.documentElement.lang,
-          source: 'site',
-          company_website: form.querySelector('input[name=company_website]').value,
-        }),
+        // Straight from the form, so this sends exactly what a plain form post sends.
+        // Anything that only one of the two paths carried would be a field that goes
+        // missing precisely when the script did not run.
+        body: JSON.stringify(Object.fromEntries(new FormData(form))),
       });
       if (res.status === 202) {
         form.hidden = true;

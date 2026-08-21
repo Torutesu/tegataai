@@ -155,6 +155,9 @@
     <label for="cw-ja" class="visually-hidden" aria-hidden="true">この欄は空のままにしてください</label>
     <input id="cw-ja" type="text" name="company_website" tabindex="-1" autocomplete="off"
            class="visually-hidden" aria-hidden="true">
+    <!-- Sent by the script and by a plain form post alike, so both carry the same fields. -->
+    <input type="hidden" name="source" value="site">
+    <input type="hidden" name="locale" value="ja">
     <button class="btn primary" type="submit">登録する</button>
   </form>
   <p class="form-status quiet" role="status" aria-live="polite"></p>
