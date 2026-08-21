@@ -35,6 +35,20 @@ for (const root of PURE) {
   }
 }
 
+// The escape hatch is only legitimate in the one adapter to real time. Anywhere else it
+// is a hole in the boundary, so the check that permits it also polices it.
+const ALLOWED_EXEMPT_FILES = new Set(['packages/core/src/clock.ts']);
+for (const root of PURE) {
+  for (const file of walk(root)) {
+    if (ALLOWED_EXEMPT_FILES.has(file.split('\\').join('/'))) continue;
+    readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+      if (/\bpurity-ok\b/.test(line)) {
+        violations.push(`${file}:${i + 1}  purity-ok is only permitted in ${[...ALLOWED_EXEMPT_FILES].join(', ')}`);
+      }
+    });
+  }
+}
+
 if (violations.length) {
   console.error(`purity check FAILED — ${violations.length} violation(s):\n`);
   for (const v of violations) console.error(v + '\n');
