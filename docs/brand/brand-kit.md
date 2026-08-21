@@ -66,8 +66,22 @@ Select KK / 2026-08-21 / v0.1
 
 紙の質感・テクスチャ画像・和柄は使わない（Master Doc §4.7 禁止事項）。構造だけを借りる。
 
-## 5. 未整備（次版）
+## 5. OG 画像
+
+`brand/og/` に 1200×630 の SVG テンプレート3種。
+
+| ファイル | 用途 | コピー |
+|---|---|---|
+| `credits.svg` | Credits LP / 共有 | Know which users lose you money — **before the model runs.** |
+| `wallet.svg` | Wallet LP / テンプレ配布 | Your agents can spend. **Decide how much, on what, and prove it later.** |
+| `spec.svg` | spec repo / 一般 | Billing systems tell you what happened. **TEGATA decides what's allowed to happen.** |
+
+構成は固定: 罫線枠 + 左上に割印と製品名 + 見出し2行（2行目のみ朱）+ 下部に罫線・補足1行・通し番号。
+**見出しは46px・2行まで。** 3行必要ならコピーが長い。書き直す。
+通し番号は資産ごとに採番し重複させない（証券の意匠であり、飾りではない）。
+
+## 6. 未整備（次版）
 
 - ワードマークのアウトライン化（フォント依存の解消）
-- OG 画像テンプレート（1200×630、割印 + 1行コピー）
+- OG の PNG 書き出し（配信時に必要。SVG のまま OGP に出せないため）
 - LP 実装用の CSS トークンファイル（gate 通過後、LP 実装と同時）

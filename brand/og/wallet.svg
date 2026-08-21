@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="TEGATA Wallet">
+  <defs>
+    <clipPath id="ol"><rect x="0" y="0" width="44" height="96"/></clipPath>
+    <clipPath id="orr"><rect x="52" y="0" width="44" height="96"/></clipPath>
+  </defs>
+  <rect width="1200" height="630" fill="#F7F4EE"/>
+  <rect x="56" y="56" width="1088" height="518" fill="none" stroke="#CFC9BB" stroke-width="2"/>
+  <g transform="translate(104,100) scale(0.55)">
+    <g fill="none" stroke="#B8432F" stroke-width="14">
+      <circle cx="48" cy="48" r="34" clip-path="url(#ol)"/>
+      <circle cx="48" cy="48" r="34" clip-path="url(#orr)"/>
+    </g>
+  </g>
+  <text x="172" y="140" font-family="Inter, Helvetica, Arial, sans-serif" font-size="24"
+        font-weight="600" letter-spacing="6" fill="#211E1A">TEGATA WALLET</text>
+  <text x="104" y="300" font-family="Inter, Helvetica, Arial, sans-serif" font-size="46" font-weight="600" fill="#211E1A">Your agents can spend. Decide how much,</text>
+  <text x="104" y="366" font-family="Inter, Helvetica, Arial, sans-serif" font-size="46" font-weight="600" fill="#B8432F">on what, and prove it later.</text>
+  <line x1="104" y1="486" x2="1096" y2="486" stroke="#CFC9BB" stroke-width="2"/>
+  <text x="104" y="526" font-family="Inter, Helvetica, Arial, sans-serif" font-size="20"
+        fill="#6B6659">Policy-enforced wallets and cards for autonomous agents.</text>
+  <text x="1096" y="526" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="16"
+        fill="#6B6659">No. 000002</text>
+</svg>
