@@ -60,3 +60,13 @@ capture が スタック残高を超えた場合、超過分は balance のみ�
 **採った手**: `purity-ok` マーカーで明示的に例外化し、**さらにチェッカー自身に
 「このマーカーは `packages/core/src/clock.ts` 以外に現れてはならない」を実装**した。
 例外を許す仕組みが、その例外の拡散も同時に取り締まる。
+
+## 2026-08-21 / M2 / 計画と spec の食い違い（spec を採用）
+
+**発見**: 計画 §4 の DDL は register 列を `delta_credits` と書いているが、
+`spec/register.md` §2 と `spec/schema/register-entry.schema.json` は `delta_amount` である。
+**採った手**: **spec を採用**（CLAUDE.md 規則4「spec は規範」）。`schema.sql` を `delta_amount` に修正。
+理由: この列は Credits では credits、Wallet では通貨最小単位を持つ。`delta_amount` の方が
+正しく、`delta_credits` は Credits 専用に読める。エクスポートの列名は外部が検証に使うため、
+実装の都合で spec 側を変えるという選択肢は最初から無い。
+**提案**: 計画 §4 の DDL を `delta_amount` に訂正する。
