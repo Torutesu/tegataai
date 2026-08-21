@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="TEGATA seal">
+  <defs>
+    <clipPath id="l"><rect x="0" y="0" width="44" height="96"/></clipPath>
+    <clipPath id="r"><rect x="52" y="0" width="44" height="96"/></clipPath>
+  </defs>
+  <g fill="none" stroke="#B8432F" stroke-width="14">
+    <circle cx="48" cy="48" r="34" clip-path="url(#l)"/>
+    <circle cx="48" cy="48" r="34" clip-path="url(#r)"/>
+  </g>
+</svg>

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TEGATA Credits — know which users lose you money, before the model runs</title>
+<meta name="description" content="Credits, real-time authorization, and margin per user for AI products. One call before each action returns allowed, refused, or a cheaper alternative. The ledger and the audit format are open source.">
+<link rel="canonical" href="https://tegata.ai/">
+<link rel="alternate" hreflang="en" href="https://tegata.ai/">
+<link rel="alternate" hreflang="ja" href="https://tegata.ai/ja/">
+<link rel="alternate" hreflang="x-default" href="https://tegata.ai/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tegata.ai/">
+<meta property="og:title" content="TEGATA Credits — before the model runs">
+<meta property="og:description" content="Credits, real-time authorization, and margin per user. One SDK.">
+<meta property="og:image" content="https://tegata.ai/og-credits.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"TEGATA Credits",
+"applicationCategory":"DeveloperApplication","operatingSystem":"Any",
+"description":"Authorization, credits and per-user margin for AI products.",
+"offers":{"@type":"Offer","price":"0","priceCurrency":"USD","description":"Free during early access"}}
+</script>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <a class="brand" href="/"><svg width="30" height="30" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><defs><clipPath id="sl"><rect width="44" height="96"/></clipPath><clipPath id="sr"><rect x="52" width="44" height="96"/></clipPath></defs><g fill="none" stroke="#B8432F" stroke-width="14"><circle cx="48" cy="48" r="34" clip-path="url(#sl)"/><circle cx="48" cy="48" r="34" clip-path="url(#sr)"/></g></svg><span class="name">TEGATA</span></a>
+  <nav>
+    <a href="/" aria-current="page">Credits</a>
+    <a href="/agents.html">Agents</a>
+    <a href="https://github.com/Torutesu/tegataai">Spec</a>
+    <a href="/ja/" hreflang="ja" lang="ja">日本語</a>
+  </nav>
+</header>
+
+<main>
+<section class="hero">
+  <h1>Know which users lose you money —<br><span class="shu">before the model runs.</span></h1>
+  <p class="lede">Credits, real-time authorization, and margin per user. One SDK.</p>
+  <div class="cta-row">
+    <a class="btn primary" href="/tool/">Check your margin — nothing uploaded</a>
+    <a class="btn" href="#waitlist">Join the waitlist</a>
+  </div>
+  <div class="evidence" aria-label="An authorization and a refusal, from a running server">
+<pre><span class="k">$</span> curl -X POST /v1/authorizations -d '{"action":"chat.completion", ...}'
+  <span class="yes">201</span>  {"decision":<span class="yes">"authorized"</span>,"face_value":12,"available_after_hold":988}   <span class="k">11ms</span>
+
+<span class="k">$</span> <span class="k"># same request, empty balance</span>
+  <span class="no">200</span>  {"decision":<span class="no">"dishonored"</span>,"reason":"insufficient_balance",
+        "available":3,"required":17,"remedy":{"fallback_action":"chat.completion.mini"}}   <span class="k">3ms</span>
+</pre>
+  </div>
+  <p class="cap">Real output, real latency. The second request never reaches the model.</p>
+</section>
+
+<section>
+  <h2>Subscriptions sell. Variable cost decides whether they were worth selling.</h2>
+  <p>AI apps convert trials 52% better than non-AI apps — and churn out of annual plans about
+  30% faster. All-you-can-eat pricing breaks against a bill that moves per request, and only
+  about one app in ten runs a working hybrid of subscription and credits.</p>
+  <p>Existing billing tells you which users cost you money. It tells you after the month closed,
+  from the provider's invoice.</p>
+</section>
+
+<section>
+  <h2>An authorization, not an invoice</h2>
+  <p>Before each action, one call: allowed, refused, or "offer the cheaper model." A refusal is
+  not an error — it returns the reason and the fix, so the moment a user hits the wall becomes
+  the moment they top up.</p>
+  <div class="grid">
+    <div>
+      <h3>Held, then settled</h3>
+      <p>A face value is reserved before the call and settled against what was actually used.
+      The remainder returns on its own.</p>
+    </div>
+    <div>
+      <h3>The refusal is data</h3>
+      <p>Balance low, balance gone, margin turned negative — each fires an event with a holdout
+      group attached, so you see whether the intervention worked, not whether it ran.</p>
+    </div>
+    <div>
+      <h3>Cheaper, or nothing</h3>
+      <p>A fallback is proposed only when it is genuinely cheaper and genuinely affordable.
+      We never route your request ourselves.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Three lines around the call you already make</h2>
+  <div class="evidence" aria-label="SDK usage">
+<pre><span class="k">const</span> guard = tegata.guard({ subjectId, action: <span class="v">'chat.completion'</span> });
+<span class="k">const</span> d = <span class="k">await</span> guard.issue({ model, inputTokens, maxOutputTokens });
+<span class="k">if</span> (d.dishonored) <span class="k">return</span> renderPaywall(d.remedy);
+
+<span class="k">try</span> { <span class="k">const</span> res = <span class="k">await</span> anthropic.messages.create({ ... });
+      <span class="k">await</span> guard.capture(res.usage); }
+<span class="k">catch</span> (e) { <span class="k">await</span> guard.release(); <span class="k">throw</span> e; }
+</pre>
+  </div>
+  <p class="cap">Your prompts never pass through us — the SDK sends token counts, not content.
+  If we are unreachable, your app keeps running: the degraded posture is a setting you choose in
+  advance, not an outage you discover.</p>
+</section>
+
+<section>
+  <h2>Export the register. Verify it yourself.</h2>
+  <p>Every hold, every settlement, every refusal lands in one append-only register. The hash
+  chain is defined over the entry itself, so anyone holding an export can check the arithmetic
+  without trusting the service that produced it.</p>
+  <div class="evidence" aria-label="Verifying an exported register">
+<pre><span class="k">$</span> curl /v1/register/export | tegata-verify
+  user_8f21   balance 991   reserved 0   available 991
+  <span class="yes">chain verifies</span> — 5 entries across 2 subjects, manifest agrees
+
+<span class="k">$</span> <span class="k"># alter one byte</span>
+  FAIL  user_8f21 seq 2: hash does not match the entry contents
+  <span class="no">chain FAILED</span> — 1 issue(s)
+</pre>
+  </div>
+  <p class="cap">Money-handling code should be readable. The ledger, the policy engine and the
+  audit format are <a href="https://github.com/Torutesu/tegataai">open source</a>. The uptime is
+  what you pay for.</p>
+</section>
+
+<section id="waitlist">
+  <h2>Early access</h2>
+  <p>We are finishing the specification with a small number of design partners. Pricing will be
+  flat-rate first, not a percentage of your revenue.</p>
+  <!-- TODO(launch): point action= at the real list before this page goes public. -->
+  <form class="waitlist" action="#" method="post" aria-label="Join the waitlist">
+    <label for="email" class="visually-hidden" style="position:absolute;left:-9999px">Email address</label>
+    <input id="email" type="email" name="email" required autocomplete="email" placeholder="you@yourapp.com">
+    <button class="btn primary" type="submit">Join the waitlist</button>
+  </form>
+  <p class="quiet" style="margin-top:.9rem">One email field, because everything else is a
+  question better asked in a conversation.</p>
+</section>
+</main>
+
+<footer>
+  <div class="seal-row"><svg width="30" height="30" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><defs><clipPath id="sl"><rect width="44" height="96"/></clipPath><clipPath id="sr"><rect x="52" width="44" height="96"/></clipPath></defs><g fill="none" stroke="#B8432F" stroke-width="14"><circle cx="48" cy="48" r="34" clip-path="url(#sl)"/><circle cx="48" cy="48" r="34" clip-path="url(#sr)"/></g></svg><strong>TEGATA</strong></div>
+  <p class="origin">A <em>tegata</em> was a written promise to pay, used in Japanese commerce for
+  centuries: a face value, a maturity, a drawer, and a chain of endorsements. The paper is
+  ending. The structure is not.</p>
+  <p>Billing systems tell you what happened. TEGATA decides what's allowed to happen.</p>
+  <p class="serial">Select KK · <a href="https://github.com/Torutesu/tegataai">the spec is public</a> · No. 000001</p>
+</footer>
+
+</div>
+</body>
+</html>

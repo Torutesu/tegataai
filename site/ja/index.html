@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TEGATA Credits — 赤字のユーザーを、モデルが動く前に。</title>
+<meta name="description" content="AIプロダクトのクレジット管理・実行前のリアルタイム認可・ユーザー別粗利。実行の直前に1回呼ぶだけで、承認・拒否・安価な代替の提示が返る。台帳と監査フォーマットはオープンソース。">
+<link rel="canonical" href="https://tegata.ai/ja/">
+<link rel="alternate" hreflang="en" href="https://tegata.ai/">
+<link rel="alternate" hreflang="ja" href="https://tegata.ai/ja/">
+<link rel="alternate" hreflang="x-default" href="https://tegata.ai/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tegata.ai/ja/">
+<meta property="og:title" content="TEGATA Credits — モデルが動く前に">
+<meta property="og:description" content="クレジット、実行前の認可、ユーザー別粗利。SDK ひとつ。">
+<meta property="og:image" content="https://tegata.ai/og-credits.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"TEGATA Credits",
+"applicationCategory":"DeveloperApplication","operatingSystem":"Any",
+"description":"AIプロダクトのための認可・クレジット・ユーザー別粗利。",
+"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <a class="brand" href="/ja/"><svg width="30" height="30" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><defs><clipPath id="jl"><rect width="44" height="96"/></clipPath><clipPath id="jr"><rect x="52" width="44" height="96"/></clipPath></defs><g fill="none" stroke="#B8432F" stroke-width="14"><circle cx="48" cy="48" r="34" clip-path="url(#jl)"/><circle cx="48" cy="48" r="34" clip-path="url(#jr)"/></g></svg><span class="name">TEGATA</span></a>
+  <nav>
+    <a href="/ja/" aria-current="page">Credits</a>
+    <a href="/agents.html" hreflang="en" lang="en">Agents</a>
+    <a href="https://github.com/Torutesu/tegataai">Spec</a>
+    <a href="/" hreflang="en" lang="en">EN</a>
+  </nav>
+</header>
+
+<main>
+<section class="hero">
+  <h1>赤字のユーザーを、<br><span class="shu">モデルが動く前に。</span></h1>
+  <p class="lede">クレジット、実行前の認可、ユーザー別の粗利。SDK ひとつで。</p>
+  <div class="cta-row">
+    <a class="btn primary" href="/tool/">粗利を測る — データは送信されません</a>
+    <a class="btn" href="#waitlist">ウェイトリストに登録</a>
+  </div>
+  <div class="evidence" aria-label="稼働中のサーバーによる認可と不渡り">
+<pre><span class="k">$</span> curl -X POST /v1/authorizations -d '{"action":"chat.completion", ...}'
+  <span class="yes">201</span>  {"decision":<span class="yes">"authorized"</span>,"face_value":12,"available_after_hold":988}   <span class="k">11ms</span>
+
+<span class="k">$</span> <span class="k"># 同じリクエスト、残高なし</span>
+  <span class="no">200</span>  {"decision":<span class="no">"dishonored"</span>,"reason":"insufficient_balance",
+        "available":3,"required":17,"remedy":{"fallback_action":"chat.completion.mini"}}   <span class="k">3ms</span>
+</pre>
+  </div>
+  <p class="cap">実際の出力と実測レイテンシ。2つ目のリクエストはモデルに届いていません。</p>
+</section>
+
+<section>
+  <h2>サブスクは売れる。売る価値があったかは、変動費が決める。</h2>
+  <p>AIアプリのトライアル転換率は非AIより 52% 高く、年間プランの解約は約 30% 速い。
+  リクエストごとに動く原価に対して、使い放題の価格設計は構造的に破綻します。
+  サブスクとクレジットのハイブリッドを実際に運用できているアプリは、10本に1本ほど。</p>
+  <p>既存の課金基盤も、どのユーザーが赤字かは教えてくれます。ただし月が締まったあと、
+  プロバイダの請求書から。</p>
+</section>
+
+<section>
+  <h2>請求ではなく、認可</h2>
+  <p>各アクションの直前に1回。承認するか、断るか、「安いモデルを提示する」か。
+  拒否はエラーではありません。理由と解決策を返すので、
+  <strong>ユーザーが壁に当たった瞬間が、そのままトップアップの瞬間になります。</strong></p>
+  <div class="grid">
+    <div>
+      <h3>押さえて、約定する</h3>
+      <p>実行前に額面を確保し、実際に使われた分で確定します。差額は自動で戻ります。</p>
+    </div>
+    <div>
+      <h3>拒否はデータになる</h3>
+      <p>残高逼迫、残高ゼロ、粗利のマイナス転落。それぞれがホールドアウト群つきのイベントになるので、
+      施策が「実行されたか」ではなく「効いたか」が分かります。</p>
+    </div>
+    <div>
+      <h3>安いか、出さないか</h3>
+      <p>代替案は、本当に安くて本当に払える場合にだけ提示します。
+      こちらがリクエストを勝手に振り替えることはありません。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>いま書いている呼び出しの、前後3行</h2>
+  <div class="evidence" aria-label="SDK の使い方">
+<pre><span class="k">const</span> guard = tegata.guard({ subjectId, action: <span class="v">'chat.completion'</span> });
+<span class="k">const</span> d = <span class="k">await</span> guard.issue({ model, inputTokens, maxOutputTokens });
+<span class="k">if</span> (d.dishonored) <span class="k">return</span> renderPaywall(d.remedy);
+
+<span class="k">try</span> { <span class="k">const</span> res = <span class="k">await</span> anthropic.messages.create({ ... });
+      <span class="k">await</span> guard.capture(res.usage); }
+<span class="k">catch</span> (e) { <span class="k">await</span> guard.release(); <span class="k">throw</span> e; }
+</pre>
+  </div>
+  <p class="cap">プロンプトが当社を通ることはありません。SDK が送るのはトークン数であって、内容ではありません。
+  当社に到達できないときもアプリは動き続けます。
+  縮退時の挙動は、障害の最中に気づく仕様ではなく、事前に選ぶ設定です。</p>
+</section>
+
+<section>
+  <h2>台帳を持ち出して、自分で検証する</h2>
+  <p>すべての保留・約定・不渡りが、追記専用のひとつの台帳に載ります。
+  ハッシュチェーンはエントリ自体に対して定義されているので、
+  エクスポートを持つ人は、それを作ったサービスを信頼せずに計算を検証できます。</p>
+  <div class="evidence" aria-label="エクスポートした台帳の検証">
+<pre><span class="k">$</span> curl /v1/register/export | tegata-verify
+  user_8f21   balance 991   reserved 0   available 991
+  <span class="yes">chain verifies</span> — 5 entries across 2 subjects, manifest agrees
+
+<span class="k">$</span> <span class="k"># 1バイト書き換える</span>
+  FAIL  user_8f21 seq 2: hash does not match the entry contents
+  <span class="no">chain FAILED</span> — 1 issue(s)
+</pre>
+  </div>
+  <p class="cap">金を扱うコードは、読めるべきです。台帳・ポリシーエンジン・監査フォーマットは
+  <a href="https://github.com/Torutesu/tegataai">オープンソース</a>。
+  対価をいただくのは、止まらないことに対してです。</p>
+</section>
+
+<section id="waitlist">
+  <h2>早期アクセス</h2>
+  <p>少数の設計パートナーと仕様を仕上げています。価格は定額から始めます。売上の何%、ではなく。</p>
+  <!-- TODO(launch): 公開前に action= を実際のリスト宛に差し替える。 -->
+  <form class="waitlist" action="#" method="post" aria-label="ウェイトリスト登録">
+    <label for="email-ja" style="position:absolute;left:-9999px">メールアドレス</label>
+    <input id="email-ja" type="email" name="email" required autocomplete="email" placeholder="you@yourapp.com">
+    <button class="btn primary" type="submit">登録する</button>
+  </form>
+  <p class="quiet" style="margin-top:.9rem">入力欄はメールだけです。ほかは、会話で聞いたほうが早いので。</p>
+</section>
+</main>
+
+<footer>
+  <div class="seal-row"><svg width="30" height="30" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><defs><clipPath id="jl"><rect width="44" height="96"/></clipPath><clipPath id="jr"><rect x="52" width="44" height="96"/></clipPath></defs><g fill="none" stroke="#B8432F" stroke-width="14"><circle cx="48" cy="48" r="34" clip-path="url(#jl)"/><circle cx="48" cy="48" r="34" clip-path="url(#jr)"/></g></svg><strong>TEGATA</strong></div>
+  <p class="origin">数百年にわたって日本の商取引を支えた、書面による支払いの約束。
+  額面があり、満期があり、振出人がいて、裏書が連なる。紙は終わります。構造は残ります。</p>
+  <p>課金システムは、何が起きたかを教えます。TEGATA は、何を起こしてよいかを決めます。</p>
+  <p class="serial">Select KK · <a href="https://github.com/Torutesu/tegataai">仕様は公開しています</a> · No. 000001</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,117 @@
+/* TEGATA — securities structure borrowed, not paper texture. docs/brand/brand-kit.md */
+:root {
+  --paper: #F7F4EE;
+  --paper-deep: #EFEBE2;
+  --ink: #211E1A;
+  --ink-2: #6B6659;
+  --rule: #CFC9BB;
+  --shu: #B8432F;
+  --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --measure: 34rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 17px/1.6 var(--sans);
+  font-synthesis-weight: none;
+}
+@media (max-width: 40rem) { body { font-size: 16px; } }
+
+.wrap { max-width: 60rem; margin: 0 auto; padding: 0 1.5rem; }
+main { display: block; }
+
+/* Ruled sections: the frame is the ornament. */
+section { padding: 4.5rem 0; border-bottom: 1px solid var(--rule); }
+section:last-of-type { border-bottom: 0; }
+@media (max-width: 40rem) { section { padding: 3rem 0; } }
+
+h1, h2, h3 { font-weight: 600; letter-spacing: -0.011em; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2rem, 5.4vw, 3.1rem); line-height: 1.14; }
+h2 { font-size: clamp(1.4rem, 3vw, 1.85rem); line-height: 1.25; margin-bottom: 1rem; }
+h3 { font-size: 1.02rem; margin-bottom: .35rem; }
+p { margin: 0 0 1rem; max-width: var(--measure); text-wrap: pretty; }
+.lede { font-size: 1.16rem; color: var(--ink-2); }
+.shu { color: var(--shu); }
+.quiet { color: var(--ink-2); font-size: .95rem; }
+
+a { color: var(--ink); text-underline-offset: .18em; text-decoration-thickness: 1px; }
+a:hover { color: var(--shu); }
+:focus-visible { outline: 2px solid var(--shu); outline-offset: 3px; }
+
+/* Header ------------------------------------------------------------------ */
+.top {
+  display: flex; align-items: center; gap: .8rem;
+  padding: 1.4rem 0; border-bottom: 1px solid var(--rule);
+}
+.top a.brand { display: flex; align-items: center; gap: .7rem; text-decoration: none; }
+.top .name { font-weight: 600; letter-spacing: .18em; font-size: .93rem; }
+.top nav { margin-left: auto; display: flex; gap: 1.3rem; align-items: center; font-size: .9rem; }
+.top nav a { text-decoration: none; color: var(--ink-2); }
+.top nav a:hover, .top nav a[aria-current] { color: var(--ink); }
+.top nav a[aria-current] { font-weight: 600; }
+
+/* Hero -------------------------------------------------------------------- */
+.hero { padding: 5rem 0 3.5rem; border-bottom: 1px solid var(--rule); }
+.hero p.lede { margin-top: 1.1rem; font-size: 1.22rem; }
+
+.cta-row { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; align-items: center; }
+.btn {
+  display: inline-block; font: 600 .95rem var(--sans); padding: .72rem 1.25rem;
+  border: 1.5px solid var(--ink); background: transparent; color: var(--ink);
+  text-decoration: none; cursor: pointer;
+}
+.btn:hover { border-color: var(--shu); color: var(--shu); }
+.btn.primary { background: var(--shu); border-color: var(--shu); color: #fff; }
+.btn.primary:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* Evidence blocks: every claim shows its working ---------------------------- */
+.evidence {
+  background: #fff; border: 1px solid var(--rule); padding: 1.1rem 1.25rem;
+  font: 400 13.5px/1.65 var(--mono); overflow-x: auto; margin: 1.5rem 0 0;
+  max-width: 46rem;
+}
+.evidence pre { margin: 0; white-space: pre; }
+.evidence .k { color: var(--ink-2); }
+.evidence .v { color: var(--ink); }
+.evidence .no { color: var(--shu); font-weight: 600; }
+.evidence .yes { color: var(--ink); font-weight: 600; }
+.cap { font-size: .85rem; color: var(--ink-2); margin: .55rem 0 0; }
+
+.grid { display: grid; gap: 1.6rem 2.2rem; grid-template-columns: repeat(3, 1fr); margin-top: 1.8rem; }
+.grid.two { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 46rem) { .grid, .grid.two { grid-template-columns: 1fr; } }
+.grid p { margin: 0; font-size: .96rem; color: var(--ink-2); max-width: none; }
+
+dl.faq { margin: 1.5rem 0 0; }
+dl.faq dt { font-weight: 600; margin-top: 1.35rem; }
+dl.faq dd { margin: .35rem 0 0; color: var(--ink-2); max-width: var(--measure); }
+
+/* Waitlist ---------------------------------------------------------------- */
+form.waitlist { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.4rem; }
+form.waitlist input[type=email] {
+  font: 400 .95rem var(--sans); padding: .7rem .85rem; min-width: 17rem; flex: 1 1 17rem;
+  border: 1.5px solid var(--rule); background: #fff; color: var(--ink);
+}
+form.waitlist input[type=email]:focus-visible { border-color: var(--shu); }
+
+/* Footer ------------------------------------------------------------------ */
+footer { padding: 2.5rem 0 3.5rem; font-size: .9rem; color: var(--ink-2); }
+footer .serial { font: 400 .8rem var(--mono); }
+footer .origin { max-width: var(--measure); margin-bottom: 1.2rem; }
+
+.seal-row { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.2rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
+  }
+}
+
+/* The page commits to the paper look; it does not follow the OS theme. */
+@media print { .btn, form.waitlist { display: none; } }
