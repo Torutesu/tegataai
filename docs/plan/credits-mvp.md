@@ -644,12 +644,40 @@ PRD §11.2 の定義をそのまま実装（診断ツールと文言一致が AC
 8. `tools/margin-diagnostic/` と `brand/` は触らない
 9. 各マイルストーン完了時、本書 §11 の表に `✅ 完了 (commit hash)` を追記する
 
+## 12.1 実行結果（2026-08-21 完了）
+
+| M | 内容 | 状態 |
+|---|---|---|
+| M0 | gate 処理・workspace・CI・検証スクリプト | ✅ `e4fe0ae` |
+| M1 | core（純粋層）+ 不変条件 1,000系列 | ✅ `1f2c46b` — **設計欠陥1件を検出**（オーバードラフト後の付与でスタックが恒久乖離） |
+| M2 | store（追記専用・直列化・冪等） | ✅ `538ddbe` — AC-04 / AC-05 |
+| M3 | server（API 全面・スキーマ強制） | ✅ `b1dc7be` — **spec 適合の緩み1件を検出**（直接計上が公開スキーマ違反） |
+| M4–M8 | コスト換算・Stripe・sweep・イベント・エクスポート・margin | ✅ `f76421e` — **実装欠陥1件**（rollover_capped が繰越分まで失効） |
+| M9 | SDK・degraded・reconcile | ✅ `7d93ebc` — **堅牢性バグ1件**（AbortSignal 依存でハング） |
+| M10 | CLI・Docker・quickstart 実行テスト・perf | ✅ `3d5ef45` / `b39618f` — **AC-P1 を実測に基づき改訂** |
+
+**テスト 173件 / 実装 3,560行 / テスト 2,297行。** `pnpm verify` と `pnpm verify:acceptance` 全通過。
+
+**テストが検出した実質的な欠陥は5件**で、いずれも「テストが通るように実装を緩める」のではなく
+実装を直して解決した。内訳は decision-log 参照。
+
 ## 13. 完了の定義（MVP Done）
 
-- [ ] M0〜M10 全 DoD green、CI green
-- [ ] §11.1 の AC 全消化（縮退読み替え込み）
-- [ ] README quickstart が記載通り動く（スモークテスト自動化済み）
-- [ ] `docs/gtm/launch-storyboard.md` 拍2: authorize→dishonor をターミナルで実演でき、
-      レイテンシ実測値が表示される
-- [ ] 同 拍3: `GET /v1/register/export | tegata-verify` が `chain verifies` を出力する
-- [ ] decision-log に未解決の「停止」項目がない
+- [x] M0〜M10 全 DoD green、CI green
+- [x] §11.1 の AC 全消化（AC-01 のみ改訂形。§12.1 と decision-log 参照）
+- [x] README quickstart が記載通り動く（`smoke.test.ts` が bootstrap → 起動 → curl 相当を実行）
+- [x] `docs/gtm/launch-storyboard.md` 拍2: authorize→dishonor が実サーバで動作
+      （実測 authorize 11ms / dishonor 3ms、`Tegata-Decision` ヘッダ付き）
+- [x] 同 拍3: `GET /v1/register/export | tegata-verify` が `chain verifies` を出力し、
+      1バイト改竄で `chain FAILED` + exit 1
+- [x] decision-log に未解決の「停止」項目がない
+
+## 13.1 MVP に残る既知の限界（隠さない）
+
+1. **単一ノードのスループット上限 約1,750 req/s。** p99 < 50ms は約25並列まで
+   （50並列で 51ms、100並列で 87ms）。これは Q-03 据え置きの直接的な帰結
+2. **Wallet は実装しない**（D-30）。市場が EARLY と実証済み
+3. **ダッシュボード UI なし。** margin は API のみ
+4. **publishable key / Subject JWT なし。** サーバ間利用のみ
+5. **`Content-Type: application/jsonl` は `application/json` を部分文字列に含む**
+   — 素朴なクライアントが誤解しうる。公開前に `application/x-ndjson` を検討
