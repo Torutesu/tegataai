@@ -338,7 +338,7 @@ Select KK launch equation: **① Comps → ② Concept Doc → ③ GTM Prototype
 |---|---|---|
 | 1 | 商標調査・ドメイン/ハンドル確保 | **未着手（Blocker）** |
 | 2 | ロゴ + 最小ブランドキット | **完了**（`brand/` + `docs/brand/brand-kit.md`。ワードマークのアウトライン化のみ残） |
-| 3 | spec-first public repo | **仕様完了。公開整形と LICENSE 配置が残** |
+| 3 | spec-first public repo | **仕様完了・LICENSE 配置済（AGPL-3.0）。公開タイミング判断のみ残** |
 | 4 | LP 骨子（Credits / Wallet） | **骨子完了**（`docs/gtm/lp-skeleton.md`）。実装が残 |
 | 5 | margin 診断ツール | **実装完了**（`tools/margin-diagnostic/`、M-01〜M-07 検証済み）。公開時に別リポジトリへ移す |
 | 6 | Agent Spend Policy Template | **完了** |

@@ -84,9 +84,9 @@ These hold across both product lines and constrain everything in `spec/`.
 
 ## License
 
-The specification, the ledger primitives, the policy engine, and the audit format are AGPL-3.0.
-Hosted enforcement, cost table maintenance, the intervention loop, and the dashboards are
-commercial.
+The specification, the ledger primitives, the policy engine, and the audit format are
+[AGPL-3.0](LICENSE). Hosted enforcement, cost table maintenance, the intervention loop, and the
+dashboards are commercial.
 
 Money-handling code should be readable. The uptime is what you pay for.
 
