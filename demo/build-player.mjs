@@ -62,11 +62,39 @@ const scenes = [
   },
 ];
 
+const CARDS = {
+  open: { hold: 3200, html: 'Your AI app has users<br>who cost you money.' },
+  close: { hold: 3400, html: 'Billing systems tell you what happened.<br>' +
+    '<span class="shu">TEGATA decides what&#39;s allowed to happen.</span>', seal: true },
+  sign: { hold: 4000, html: '<span class="small">TEGATA — the oldest payment instrument,<br>' +
+    'rebuilt for machines.</span><br><span class="url">tegata.ai · the spec is public</span>' },
+};
+
+// Scene 3: the world before. Left, the code a tenant already has; right, a log that
+// only fills in once the month is over.
+const SCENE3 = {
+  id: 'beat1', caption: 'What billing can tell you', clear: true, split: true,
+  left: [
+    'const res = await anthropic.messages.create({',
+    '  model: "claude-opus-5",',
+    '  messages,',
+    '});',
+    '',
+    'return res.content;',
+  ],
+  right: [
+    '# provider invoice',
+    '',
+    '(nothing until the 1st)',
+  ],
+  hold: 5200,
+};
+
 const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <title>TEGATA — recorded session</title>
 <style>
-  :root { --paper:#F7F4EE; --ink:#211E1A; --ink2:#6B6659; --rule:#CFC9BB; --shu:#B8432F; }
+  :root { --paper:#F7F4EE; --ink:#211E1A; --ink2:#6B6659; --rule:#CFC9BB; --shu:#B8432F; --deep:#EFEBE2; }
   * { box-sizing:border-box; margin:0 }
   body { background:var(--paper); color:var(--ink); width:1280px; height:720px; overflow:hidden;
          font:400 17px/1.55 "IBM Plex Mono", ui-monospace, Menlo, monospace; }
@@ -79,7 +107,6 @@ const html = `<!doctype html>
   .line { white-space:pre-wrap; margin-bottom:2px }
   .cmd { color:var(--ink) } .cmd .p { color:var(--ink2) }
   .note { color:var(--ink2) }
-  .out { color:var(--ink) }
   .status { font-weight:600 } .ok .status { color:var(--ink) } .no .status { color:var(--shu) }
   .no .body { color:var(--shu) } .ok .body { color:var(--ink) }
   .line.big { font-size:26px; line-height:1.5; margin:10px 0 }
@@ -88,12 +115,24 @@ const html = `<!doctype html>
   .cursor { display:inline-block; width:9px; height:19px; background:var(--ink);
             vertical-align:-4px; animation:b 1s steps(1) infinite }
   @keyframes b { 50% { opacity:0 } }
+
+  .split { display:flex; gap:0; padding-top:22px; flex:1 }
+  .split .pane { flex:1; padding:0 26px }
+  .split .pane:first-child { padding-left:0; border-right:1px solid var(--rule) }
+  .split .pane:last-child { color:var(--ink2) }
+  .split .pane .l { white-space:pre; margin-bottom:2px }
+
   .card { position:absolute; inset:0; background:var(--paper); display:flex; flex-direction:column;
-          align-items:center; justify-content:center; gap:22px; opacity:0 }
+          align-items:center; justify-content:center; gap:26px; opacity:0 }
   .card.on { opacity:1 }
   .card h1 { font-family:Inter,sans-serif; font-size:38px; font-weight:600; letter-spacing:-.01em;
-             text-align:center; line-height:1.3 }
+             text-align:center; line-height:1.34 }
+  .card h1 .small { font-size:27px; font-weight:400; color:var(--ink) }
+  .card h1 .url { font-size:16px; color:var(--ink2); font-family:"IBM Plex Mono",monospace;
+                  display:inline-block; margin-top:22px }
   .card .shu { color:var(--shu) }
+  .card .seal { opacity:0; transform:scale(1.5) }
+  .card .seal.press { opacity:1; transform:scale(1); transition:opacity .18s, transform .18s }
 </style></head>
 <body>
 <div class="stage">
@@ -109,13 +148,27 @@ const html = `<!doctype html>
   </div>
   <div class="term" id="term"></div>
 </div>
-<div class="card" id="card"><h1></h1></div>
+<div class="card" id="card">
+  <h1></h1>
+  <svg class="seal" id="seal" width="74" height="74" viewBox="0 0 200 200"><defs>
+    <clipPath id="cl"><rect width="92" height="200"/></clipPath>
+    <clipPath id="cr"><rect x="108" width="92" height="200"/></clipPath></defs>
+    <rect x="22" y="46" width="70" height="108" fill="none" stroke="#211E1A" stroke-width="3"/>
+    <rect x="108" y="46" width="70" height="108" fill="none" stroke="#211E1A" stroke-width="3"/>
+    <g fill="none" stroke="#B8432F" stroke-width="9">
+      <circle cx="100" cy="96" r="32" clip-path="url(#cl)"/>
+      <circle cx="100" cy="96" r="32" clip-path="url(#cr)"/></g></svg>
+</div>
 
 <script>
 const SCENES = ${JSON.stringify(scenes)};
+const CARDS = ${JSON.stringify(CARDS)};
+const SCENE3 = ${JSON.stringify(SCENE3)};
+const WANT = (new URLSearchParams(location.search).get('parts') || 'open,3,4,5,6,close,sign').split(',');
 const term = document.getElementById('term');
 const caption = document.getElementById('caption');
 const card = document.getElementById('card');
+const seal = document.getElementById('seal');
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 async function type(el, text, speed) {
@@ -129,53 +182,80 @@ async function type(el, text, speed) {
   cursor.remove();
 }
 
-async function showCard(html, hold) {
-  card.querySelector('h1').innerHTML = html;
+async function showCard(spec) {
+  card.querySelector('h1').innerHTML = spec.html;
+  seal.classList.remove('press');
   card.classList.add('on');
-  await sleep(hold);
+  if (spec.seal) { await sleep(1600); seal.classList.add('press'); }
+  await sleep(spec.hold);
   card.classList.remove('on');
+  await sleep(300);
+}
+
+async function playSplit(scene) {
+  term.innerHTML = '';
+  caption.textContent = scene.caption;
+  const wrap = document.createElement('div');
+  wrap.className = 'split';
+  wrap.innerHTML = '<div class="pane" id="pl"></div><div class="pane" id="pr"></div>';
+  term.appendChild(wrap);
+  const pl = wrap.querySelector('#pl');
+  for (const l of scene.left) {
+    const d = document.createElement('div'); d.className = 'l'; pl.appendChild(d);
+    await type(d, l, 13);
+  }
+  await sleep(500);
+  const pr = wrap.querySelector('#pr');
+  for (const l of scene.right) {
+    const d = document.createElement('div'); d.className = 'l'; pr.appendChild(d);
+    await type(d, l, 18);
+  }
+  await sleep(scene.hold);
+}
+
+async function playTerminal(scene) {
+  if (scene.clear !== false) term.innerHTML = '';
+  caption.textContent = scene.caption;
+  await sleep(400);
+  for (const line of scene.lines) {
+    const div = document.createElement('div');
+    div.className = 'line ' + (line.tone ? line.tone : '');
+    term.appendChild(div);
+    term.scrollTop = term.scrollHeight;
+    if (line.type === 'cmd') {
+      div.classList.add('cmd');
+      div.innerHTML = '<span class="p">$ </span>';
+      await type(div, line.text, 11);
+      await sleep(220);
+    } else if (line.type === 'note') {
+      div.classList.add('note');
+      await type(div, line.text, 16);
+      await sleep(500);
+    } else if (line.type === 'res' || line.type === 'res2') {
+      if (line.big) div.classList.add('big');
+      const head = line.status === undefined ? '' :
+        '  <span class="status">' + line.status + '</span>  ' +
+        '<span class="ms">' + line.ms + 'ms</span>\\n';
+      div.innerHTML = head + '<span class="body">  ' + line.text + '</span>';
+      await sleep(line.tone === 'no' ? 2600 : 1300);
+    } else {
+      div.innerHTML = '<span class="body">' + line.text.replace(/^/gm, '  ') + '</span>';
+      await sleep(line.tone === 'no' ? 2400 : 1800);
+    }
+  }
+  await sleep(1200);
 }
 
 async function play() {
-  await showCard('Your AI app has users<br>who cost you money.', 2200);
-
-  for (const scene of SCENES) {
-    if (scene.clear !== false) term.innerHTML = '';
-    caption.textContent = scene.caption;
-    await sleep(400);
-    for (const line of scene.lines) {
-      const div = document.createElement('div');
-      div.className = 'line ' + (line.tone ? line.tone : '');
-      term.appendChild(div);
-      term.scrollTop = term.scrollHeight;
-      if (line.type === 'cmd') {
-        div.classList.add('cmd');
-        div.innerHTML = '<span class="p">$ </span>';
-        await type(div, line.text, 11);
-        await sleep(220);
-      } else if (line.type === 'note') {
-        div.classList.add('note');
-        await type(div, line.text, 16);
-        await sleep(500);
-      } else if (line.type === 'res' || line.type === 'res2') {
-        if (line.big) div.classList.add('big');
-        const head = line.status === undefined ? '' :
-          '  <span class="status">' + line.status + '</span>  ' +
-          '<span class="ms">' + line.ms + 'ms</span>\\n';
-        div.innerHTML = head + '<span class="body">  ' + line.text + '</span>';
-        await sleep(line.tone === 'no' ? 2600 : 1300);
-      } else {
-        div.innerHTML = '<span class="body">' + line.text.replace(/^/gm, '  ') + '</span>';
-        await sleep(line.tone === 'no' ? 2400 : 1800);
-      }
-    }
-    await sleep(1400);
+  for (const part of WANT) {
+    if (CARDS[part]) { await showCard(CARDS[part]); continue; }
+    if (part === '3') { await playSplit(SCENE3); continue; }
+    const scene = { '4a': SCENES[0], '4b': SCENES[1], '6': SCENES[2] }[part];
+    if (scene) await playTerminal(scene);
+    if (part === '4') { await playTerminal(SCENES[0]); await playTerminal(SCENES[1]); }
   }
-
   term.innerHTML = '';
   caption.textContent = '';
-  await showCard('Billing systems tell you what happened.<br>' +
-                 '<span class="shu">TEGATA decides what\\'s allowed to happen.</span>', 3200);
   document.title = 'done';
 }
 play();

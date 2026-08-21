@@ -61,10 +61,26 @@ A remedy that is not cheaper, or not affordable, is withheld rather than offered
 | V-05 "AI" is never the subject | The subjects are the request, the model, the register |
 | V-06 length | 38s for beats 2–3. Scenes 1–3 and 5 remain to be shot for the 75s cut |
 
+## The finished film
+
+`out/tegata-launch.mp4` — 1:12, 1280×720, 1.4 MB. All eight scenes, assembled by
+`assemble.mjs` in storyboard order.
+
+Three kinds of material go into it, and only two of them are scripted:
+
+| Scene | Material |
+|---|---|
+| 1, 3, 7, 8 | Cards and a split terminal. Written. |
+| 2 | The diagnostic tool, driven with real CSVs. **Its real output is 16% / 63%** — the storyboard's 14%/61% was a placeholder, and the film uses what came out. |
+| 4, 6 | The captured session replayed. |
+| 5 | A demo app talking to the running server. The paywall is built from the refusal the server returned; the top-up and the retry are real calls. |
+
+Scene 5 is recorded through a forwarding route in `record-live.mjs` rather than direct
+browser calls, because the server sends no CORS headers and the MVP is server-to-server
+by design. Loosening the product for a video was the wrong trade; forwarding is a
+transport hop, and every response on screen is the server's own.
+
 ## Still to shoot
 
-Scenes 1, 2, 3, 5 and 7 of the storyboard: the opening card, the diagnostic result, the
-"billing tells you afterwards" contrast, the in-app top-up, and the closing seal. Beat 1
-(scene 2) needs the diagnostic driven on camera; the rest are cards and product UI.
-
-The reel deliberately has no audio. The voiceover script is in the storyboard.
+Nothing. The voiceover is not recorded — the film is silent by design and the script
+lives in the storyboard, to be read over it or cut as subtitles.

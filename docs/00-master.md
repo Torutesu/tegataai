@@ -292,10 +292,9 @@ A → B 順序を維持する。
 - [x] Agent Spend Policy Template（`templates/agent-spend-policy.md`）
 - [x] spec-first public repo の中身（`spec/` + `packages/` の参照実装）
 - [x] ローンチ動画のストーリーボード（`docs/gtm/launch-storyboard.md`）
-- [x] **ローンチ動画の拍2・拍3 を実サーバに対して撮影**（`demo/`。表示レイテンシは全て記録由来）
+- [x] **ローンチ動画（全8シーン・1分12秒）** — `demo/out/tegata-launch.mp4`。検収 V-01〜V-06 全通過
 - [x] LP 実装（`site/`。全4ページ Lighthouse 100/100/100/100、LCP 1.2s、CLS 0）
-- [ ] 動画の残りシーン（1・2・3・5・7）を撮る
-- [ ] **公開**（LP / 診断ツール / spec repo）← **商標の回答待ち**
+- [ ] **公開**（LP / 診断ツール / spec repo / 動画）← **商標の回答待ち**
 - [ ] waitlist フォームのバックエンド（現在 `action="#"`。宛先なしで受け取るほうが害が大きい）
 
 **ルール（不変）**: 説得力あるローンチ動画が明確に作れないなら、Concept 段階に戻す。
@@ -397,5 +396,5 @@ Q-04 と Q-05 の検証を担っていた。外した以上、この2つは §6.
 | 4 | LP 骨子（Credits / Wallet） | **実装完了**（`site/`、全4ページ Lighthouse 100/100/100/100）。公開は商標待ち |
 | 5 | margin 診断ツール | **実装完了**（`tools/margin-diagnostic/`、M-01〜M-07 検証済み）。公開時に別リポジトリへ移す |
 | 6 | Agent Spend Policy Template | **完了** |
-| 7 | ローンチ動画 / ストーリーボード | **拍2・拍3 を実サーバに対して撮影完了**（`demo/`、38秒）。残りはシーン1・2・3・5・7 |
+| 7 | ローンチ動画 / ストーリーボード | **完了**。全8シーン 1分12秒（`demo/out/tegata-launch.mp4`）。検収 V-01〜V-06 全通過 |
 | 8 | ICP ヒアリングリスト + 質問設計 | **完了・ただし gate 条件からは除外（D-32）。** 前提が外れたときの再開用に保持 |

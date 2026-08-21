@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Demo app</title>
+<style>
+  :root { --paper:#F7F4EE; --ink:#211E1A; --ink2:#6B6659; --rule:#CFC9BB; --shu:#B8432F; --deep:#EFEBE2; }
+  * { box-sizing:border-box; margin:0 }
+  body { width:1280px; height:720px; background:var(--paper); color:var(--ink); overflow:hidden;
+         font:400 16px/1.55 Inter, -apple-system, "Helvetica Neue", Arial, sans-serif; display:flex }
+
+  /* Left: an ordinary AI app. Right: what the ledger recorded. */
+  .app { flex:1 1 62%; padding:48px 52px; border-right:1px solid var(--rule); position:relative }
+  .side { flex:1 1 38%; padding:48px 40px; background:var(--deep) }
+
+  .chrome { display:flex; align-items:center; gap:10px; margin-bottom:34px }
+  .dot { width:11px; height:11px; border-radius:50%; background:var(--rule) }
+  .appname { font-weight:600; font-size:15px; letter-spacing:.01em; margin-left:6px }
+  .bal { margin-left:auto; font:400 13px "IBM Plex Mono", monospace; color:var(--ink2) }
+  .bal b { color:var(--ink); font-weight:600 }
+
+  .prompt { border:1px solid var(--rule); background:#fff; padding:16px 18px; font-size:16px;
+            color:var(--ink2); min-height:96px }
+  .go { margin-top:18px; display:inline-block; font:600 15px Inter,sans-serif; padding:11px 22px;
+        border:1.5px solid var(--shu); background:var(--shu); color:#fff }
+  .result { margin-top:26px; min-height:150px }
+  .thumb { width:300px; height:170px; background:var(--deep); border:1px solid var(--rule);
+           display:flex; align-items:center; justify-content:center; color:var(--ink2); font-size:13px }
+
+  /* The paywall is the product's own surface, drawn from the refusal we were handed. */
+  .paywall { border:1.5px solid var(--shu); background:#fff; padding:22px 24px; max-width:470px }
+  .paywall h3 { font-size:17px; font-weight:600; margin-bottom:8px }
+  .paywall p { font-size:14.5px; color:var(--ink2); margin-bottom:14px }
+  .paywall .row { display:flex; gap:10px }
+  .paywall .buy { font:600 14px Inter,sans-serif; padding:9px 18px; border:1.5px solid var(--shu);
+                  background:var(--shu); color:#fff }
+  .paywall .alt { font:600 14px Inter,sans-serif; padding:9px 18px; border:1.5px solid var(--rule);
+                  background:#fff; color:var(--ink) }
+  .from { font:400 12px "IBM Plex Mono",monospace; color:var(--ink2); margin-top:14px }
+
+  .side h4 { font:600 11.5px Inter,sans-serif; letter-spacing:.08em; text-transform:uppercase;
+             color:var(--ink2); margin-bottom:16px }
+  .feed { font:400 13px/1.5 "IBM Plex Mono", monospace }
+  .ev { padding:9px 0; border-bottom:1px solid var(--rule); display:flex; gap:10px; opacity:0 }
+  .ev.on { opacity:1 }
+  .ev .kind { min-width:78px; color:var(--ink2) }
+  .ev .what { color:var(--ink) }
+  .ev.no .what, .ev.no .kind { color:var(--shu) }
+  .ev .amt { margin-left:auto; color:var(--ink2) }
+  .hidden { display:none !important }
+</style></head>
+<body>
+<div class="app">
+  <div class="chrome">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="appname">Atelier</span>
+    <span class="bal">balance <b id="bal">—</b> credits</span>
+  </div>
+  <div class="prompt" id="prompt"></div>
+  <div class="go">Generate</div>
+  <div class="result" id="result"></div>
+</div>
+
+<div class="side">
+  <h4>Register</h4>
+  <div class="feed" id="feed"></div>
+</div>
+
+<script>
+const BASE = new URLSearchParams(location.search).get('base') || 'http://127.0.0.1:8791';
+const KEY = new URLSearchParams(location.search).get('key') || '';
+const SUBJECT = 'user_atelier';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const $ = id => document.getElementById(id);
+
+const api = async (path, body, idem) => {
+  const res = await fetch(BASE + path, {
+    method: body === undefined ? 'GET' : 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: 'Bearer ' + KEY,
+      ...(idem ? { 'idempotency-key': idem } : {}),
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  return { status: res.status, json: await res.json() };
+};
+
+const refreshBalance = async () => {
+  const s = await api('/v1/subjects/' + SUBJECT);
+  $('bal').textContent = s.json.available;
+  return s.json;
+};
+
+function addEvent(kind, what, amt, bad) {
+  const div = document.createElement('div');
+  div.className = 'ev' + (bad ? ' no' : '');
+  div.innerHTML = '<span class="kind">' + kind + '</span><span class="what">' + what +
+    '</span><span class="amt">' + (amt ?? '') + '</span>';
+  $('feed').appendChild(div);
+  requestAnimationFrame(() => div.classList.add('on'));
+}
+
+async function typeInto(el, text, speed) {
+  el.style.color = 'var(--ink)';
+  for (const ch of text) { el.textContent += ch; await sleep(speed); }
+}
+
+const ESTIMATE = { provider: 'anthropic', model: 'claude-opus-5',
+                   input_tokens: 9000, max_output_tokens: 4000 };
+
+async function run() {
+  await refreshBalance();
+  await sleep(400);
+  await typeInto($('prompt'), 'A brass astrolabe on a draughtsman’s table, late afternoon light', 19);
+  await sleep(350);
+
+  // 1. The refusal, and the paywall drawn from it.
+  const a = await api('/v1/authorizations',
+    { subject_id: SUBJECT, action: 'chat.completion', estimate: ESTIMATE }, 'app-1');
+  addEvent('dishonor', a.json.reason ?? 'authorized', '0', true);
+  await sleep(250);
+
+  const r = a.json.remedy;
+  $('result').innerHTML =
+    '<div class="paywall"><h3>You are ' + (a.json.required - a.json.available) + ' credits short.</h3>' +
+    '<p>This generation needs ' + a.json.required + ' credits and you have ' + a.json.available +
+    '. Add credits, or run it on the smaller model' +
+    (r ? ' for ' + r.fallback_face_value + '.' : '.') + '</p>' +
+    '<div class="row"><span class="buy">Add 500 credits</span>' +
+    (r ? '<span class="alt">Use ' + r.fallback_action.split('.').pop() + '</span>' : '') + '</div>' +
+    '<p class="from">reason: ' + a.json.reason + '  ·  required: ' + a.json.required +
+    '  ·  available: ' + a.json.available + '</p></div>';
+  await sleep(2400);
+
+  // 2. The top-up.
+  const g = await api('/v1/subjects/' + SUBJECT + '/grants',
+    { credits: 500, amount_micro_usd: 10000000 }, 'app-2');
+  addEvent('grant', 'topup', '+500');
+  await refreshBalance();
+  $('result').innerHTML = '';
+  await sleep(550);
+
+  // 3. The same request, now authorized, settled at what it actually used.
+  const b = await api('/v1/authorizations',
+    { subject_id: SUBJECT, action: 'chat.completion', estimate: ESTIMATE }, 'app-3');
+  addEvent('issue', 'held', '-' + b.json.face_value);
+  await refreshBalance();
+  $('result').innerHTML = '<div class="thumb">generating…</div>';
+  await sleep(1000);
+
+  const c = await api('/v1/authorizations/' + b.json.authorization_id + '/capture',
+    { actual: { input_tokens: 9000, output_tokens: 2100 } }, 'app-4');
+  addEvent('capture', 'settled', '-' + c.json.captured_amount);
+  addEvent('release', 'returned', '+' + c.json.released_remainder);
+  await refreshBalance();
+  $('result').innerHTML = '<div class="thumb">— generated —</div>';
+  await sleep(1500);
+  document.title = 'done';
+}
+run();
+</script>
+</body></html>
