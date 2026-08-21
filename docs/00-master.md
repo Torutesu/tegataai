@@ -284,20 +284,43 @@ Select KK launch equation: **① Comps → ② Concept Doc → ③ GTM Prototype
 — `docs/gtm/icp-target-list.md` §2 の調査により市場が EARLY と実証されたため、§2.3 の
 A → B 順序を維持する。
 
-## 6.1 GTM Prototype gate 通過条件
+## 6.1 GTM Prototype gate 通過条件（**D-32 により改訂**）
 
-**Product A**
-- [ ] margin 診断ツール（Stripe / OpenAI の export を食わせて赤字ユーザー% を出す無料ツール）を公開
-- [ ] LP + デモで waitlist / 商談 N件（N は着手時に確定）
-- [ ] ICP 10社ヒアリングで「enforcement を自前実装済み or 諦めた」が**過半**
+**現行条件**（2026-08-21 改訂）
 
-**Product B**
-- [ ] 「Agent Spend Policy Template」（経費規程テンプレ + 可視化デモ）を無料配布、DL / 商談 N件
-- [ ] エージェント本番運用企業 10社ヒアリングで「支出事故 or その恐怖で自律化を止めている」が**過半**
+- [x] margin 診断ツールを実装（`tools/margin-diagnostic/`）
+- [x] Agent Spend Policy Template（`templates/agent-spend-policy.md`）
+- [x] spec-first public repo の中身（`spec/` + `packages/` の参照実装）
+- [x] ローンチ動画のストーリーボード（`docs/gtm/launch-storyboard.md`）
+- [ ] **ローンチ動画を実際に撮って出す** ← gate の残り全部
+- [ ] LP 公開 + waitlist 導線
+- [ ] 診断ツールの公開
 
-**共通**
-- [ ] spec-first public repo（README + policy schema 仕様のみ、コードなし）への反応で温度を測る
-- [ ] **ルール**: 説得力あるローンチ動画/ストーリーボードが明確に作れないなら、Concept 段階に戻す
+**ルール（不変）**: 説得力あるローンチ動画が明確に作れないなら、Concept 段階に戻す。
+拍2（実行前に止まる瞬間）と拍3（検証可能な台帳）は**実装済みで撮影可能**であることを確認済み。
+
+### 外した条件と、その代償
+
+**ICP ヒアリング（各10社）を gate 条件から外した**（D-32、オーナー判断）。
+市場を確定と見なす判断であり、ヒアリングは検証手段であって目的ではない。
+
+ただし**代償は明記する**。ヒアリング設計（`docs/gtm/icp-interviews.md`）は
+Q-04 と Q-05 の検証を担っていた。外した以上、この2つは §6.3 の**前提**になる。
+ヒアリング資料（質問設計・対象リスト・アウトリーチ文面）は破棄せず保持する
+— 前提が外れたときに、そこから再開できるようにするため。
+
+## 6.3 検証せずに置いた前提（D-33）
+
+**外れたときに何を疑うべきかを先に書いておく。**
+
+| # | 前提 | 外れた場合の兆候 | そのとき見る資料 |
+|---|---|---|---|
+| A-1 | 価格は定額（$99/mo 帯）+ 薄い従量。%課金は主軸にしない | 定額が高すぎて試用にすら至らない / 大口が定額を割高と感じる | `icp-interviews.md` §5 の価格の聞き方 |
+| A-2 | v1 は Stripe のみ対応で足りる | 見込み客の課金基盤が RevenueCat / Paddle で、接続できず商談が落ちる | `icp-target-list.md` §1.1（AIWriteBook は RevenueCat） |
+| A-3 | ICP は enforcement を自前実装済み or 諦めている | 「そもそも困っていない」という反応が続く | `icp-interviews.md` §2.2 のスクリプト |
+| A-4 | consumer/prosumer AIアプリ帯に十分な母数がある | Tier 1 が尽きて Tier 2 以降が ICP 外ばかり | `icp-target-list.md` §0.1（通過率 1/8、有資格 350〜450社の推計） |
+
+**Product B は実装しない**（D-30）。市場が EARLY と実証済みのため、本表は Product A のみを対象とする。
 
 ## 6.2 着手前に必ず潰すもの（Blocker）
 
@@ -366,11 +389,11 @@ A → B 順序を維持する。
 
 | # | 成果物 | 状態 |
 |---|---|---|
-| 1 | 商標調査・ドメイン/ハンドル確保 | **未着手（Blocker）** |
+| 1 | 商標調査・ドメイン/ハンドル確保 | **進行中**（オーナー承認済 2026-08-21）。依頼書は `docs/gtm/trademark-brief.md` |
 | 2 | ロゴ + 最小ブランドキット | **完了**（`brand/` + `docs/brand/brand-kit.md`。ワードマークのアウトライン化のみ残） |
 | 3 | spec-first public repo | **仕様完了・LICENSE 配置済（AGPL-3.0）。公開タイミング判断のみ残** |
 | 4 | LP 骨子（Credits / Wallet） | **骨子完了**（`docs/gtm/lp-skeleton.md`）。実装が残 |
 | 5 | margin 診断ツール | **実装完了**（`tools/margin-diagnostic/`、M-01〜M-07 検証済み）。公開時に別リポジトリへ移す |
 | 6 | Agent Spend Policy Template | **完了** |
 | 7 | ローンチ動画 / ストーリーボード | **ストーリーボード完了**（`docs/gtm/launch-storyboard.md`）。拍1は診断ツール実装後、拍2/3 は Phase 1 最小実装後に撮影可 |
-| 8 | ICP ヒアリングリスト + 質問設計 | **完了**（`icp-target-list.md` / `outreach.md`）。**Product B の gate 条件に改訂提案あり — 要判断** |
+| 8 | ICP ヒアリングリスト + 質問設計 | **完了・ただし gate 条件からは除外（D-32）。** 前提が外れたときの再開用に保持 |
