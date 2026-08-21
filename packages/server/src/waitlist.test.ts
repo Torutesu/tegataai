@@ -122,6 +122,38 @@ describe('what it refuses', () => {
     await r.close();
   });
 
+  /**
+   * The form sends JSON under a safelisted content type so the browser skips the
+   * preflight — the round trip that used to sit in front of the confirmation. That only
+   * works if the server reads it, so this is the test that keeps it working.
+   */
+  it('reads a JSON body sent as text/plain, so the form needs no preflight', async () => {
+    const r = await rig();
+    const res = await r.post({ email: 'simple@example.com' },
+      { 'content-type': 'text/plain;charset=UTF-8', origin: 'https://tegata.ai' });
+    expect(res.statusCode).toBe(202);
+    expect(r.store.waitlistEntries()[0]!.email).toBe('simple@example.com');
+    await r.close();
+  });
+
+  it('still refuses an origin it does not allow, preflight or not', async () => {
+    const r = await rig({ origins: ['https://tegata.ai'] });
+    const res = await r.post({ email: 'founder@example.com' },
+      { 'content-type': 'text/plain;charset=UTF-8', origin: 'https://evil.example' });
+    expect(res.statusCode).toBe(403);
+    expect(r.store.waitlistCount()).toBe(0);
+    await r.close();
+  });
+
+  it('refuses a text/plain body that is not JSON', async () => {
+    const r = await rig();
+    const res = await r.app.inject({ method: 'POST', url: '/v1/waitlist',
+      headers: { 'content-type': 'text/plain' }, payload: 'founder@example.com' });
+    expect(res.statusCode).toBe(400);
+    expect(r.store.waitlistCount()).toBe(0);
+    await r.close();
+  });
+
   it('swallows a bot that fills in the field no person can see', async () => {
     const r = await rig();
     const res = await r.post({ email: 'bot@example.com', company_website: 'http://spam' });

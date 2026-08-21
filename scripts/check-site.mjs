@@ -89,6 +89,31 @@ for (const origin of actions) {
   }
 }
 
+/**
+ * The confirmation the person waits for cannot appear before the request completes, and
+ * on a cross-origin form the browser will happily spend a whole extra round trip on a
+ * preflight before it even sends that request. Only three content types avoid it. Going
+ * back to application/json would silently put the preflight back and nothing would look
+ * broken — it would just be slower — so it is checked here rather than remembered.
+ */
+const SAFELISTED = ['text/plain', 'application/x-www-form-urlencoded', 'multipart/form-data'];
+const script = readFileSync('site/waitlist.js', 'utf8');
+for (const [, value] of script.matchAll(/'content-type':\s*'([^']+)'/g)) {
+  check(SAFELISTED.some((t) => value.startsWith(t)),
+    `waitlist.js posts as ${value}, which makes the browser preflight before it sends`);
+}
+check(/signal:/.test(script), 'waitlist.js has no deadline — a hung request leaves "Sending…" on screen');
+
+// Connecting to the API costs DNS, TCP and TLS. Doing it while the page loads takes it
+// off the path between the button and the confirmation.
+for (const page of pages) {
+  const html = readFileSync(page, 'utf8');
+  const form = /<form[^>]*\saction="(https?:\/\/[^/"]+)/.exec(html);
+  if (form === null) continue;
+  check(html.includes(`<link rel="preconnect" href="${form[1]}"`),
+    `${page}: has a form posting to ${form[1]} but never preconnects to it`);
+}
+
 if (problems.length > 0) {
   console.error(`site check FAILED — ${problems.length} problem(s):\n`);
   for (const p of problems) console.error(`  ${p}`);

@@ -20,7 +20,8 @@
     "tegata-verify": "tsx packages/verify/src/cli.ts",
     "verify:site": "node scripts/check-site.mjs",
     "site": "cd site && python3 -m http.server 8080",
-    "verify:csp": "node scripts/check-csp.mjs"
+    "verify:csp": "node scripts/check-csp.mjs",
+    "measure:banner": "node scripts/measure-banner.mjs"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",

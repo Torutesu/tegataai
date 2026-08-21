@@ -1,0 +1,162 @@
+{
+  "measured_at": "2026-08-21T07:30:07.444Z",
+  "node": "v22.22.2",
+  "scope": "Chromium against a local API with a fixed delay per reply. Loopback, so no DNS, TCP or TLS setup is included — the preconnect the page also does cannot show here.",
+  "runs_per_arm": 9,
+  "note": "Both arms are the same page and the same server; only the posted content type differs. A preflight is a second round trip in front of the one the person is waiting on.",
+  "measurements": [
+    {
+      "simulated_rtt_ms": 20,
+      "saved_ms": 26,
+      "arms": [
+        {
+          "arm": "text/plain (shipped)",
+          "api_requests_per_submission": [
+            "POST"
+          ],
+          "time_to_confirmation_ms": {
+            "min": 58,
+            "median": 68,
+            "max": 96
+          },
+          "samples": [
+            58,
+            65,
+            66,
+            66,
+            68,
+            70,
+            75,
+            88,
+            96
+          ]
+        },
+        {
+          "arm": "application/json (preflighted)",
+          "api_requests_per_submission": [
+            "OPTIONS",
+            "POST"
+          ],
+          "time_to_confirmation_ms": {
+            "min": 84,
+            "median": 94,
+            "max": 103
+          },
+          "samples": [
+            84,
+            85,
+            85,
+            92,
+            94,
+            97,
+            98,
+            101,
+            103
+          ]
+        }
+      ]
+    },
+    {
+      "simulated_rtt_ms": 60,
+      "saved_ms": 67,
+      "arms": [
+        {
+          "arm": "text/plain (shipped)",
+          "api_requests_per_submission": [
+            "POST"
+          ],
+          "time_to_confirmation_ms": {
+            "min": 103,
+            "median": 110,
+            "max": 115
+          },
+          "samples": [
+            103,
+            105,
+            109,
+            109,
+            110,
+            111,
+            111,
+            114,
+            115
+          ]
+        },
+        {
+          "arm": "application/json (preflighted)",
+          "api_requests_per_submission": [
+            "OPTIONS",
+            "POST"
+          ],
+          "time_to_confirmation_ms": {
+            "min": 169,
+            "median": 177,
+            "max": 190
+          },
+          "samples": [
+            169,
+            176,
+            177,
+            177,
+            177,
+            178,
+            179,
+            183,
+            190
+          ]
+        }
+      ]
+    },
+    {
+      "simulated_rtt_ms": 150,
+      "saved_ms": 157,
+      "arms": [
+        {
+          "arm": "text/plain (shipped)",
+          "api_requests_per_submission": [
+            "POST"
+          ],
+          "time_to_confirmation_ms": {
+            "min": 199,
+            "median": 207,
+            "max": 217
+          },
+          "samples": [
+            199,
+            203,
+            204,
+            205,
+            207,
+            209,
+            210,
+            216,
+            217
+          ]
+        },
+        {
+          "arm": "application/json (preflighted)",
+          "api_requests_per_submission": [
+            "OPTIONS",
+            "POST"
+          ],
+          "time_to_confirmation_ms": {
+            "min": 343,
+            "median": 364,
+            "max": 375
+          },
+          "samples": [
+            343,
+            348,
+            349,
+            363,
+            364,
+            364,
+            369,
+            371,
+            375
+          ]
+        }
+      ]
+    }
+  ]
+}

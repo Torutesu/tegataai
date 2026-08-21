@@ -47,6 +47,21 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   const allowedOrigins = new Set(opts.waitlistOrigins ?? []);
   const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 1_048_576 });
 
+  // The waitlist form posts JSON as text/plain on purpose: it is a CORS-safelisted
+  // content type, so the browser sends the request straight out instead of waiting for
+  // a preflight to come back first. That round trip was the largest part of the time
+  // between pressing the button and the confirmation appearing. Accepting the body here
+  // is what makes it possible; nothing about how it is read changes.
+  app.addContentTypeParser('text/plain', { parseAs: 'string' }, (_req, body, done) => {
+    const text = body as string;
+    if (text.length === 0) { done(null, {}); return; }
+    try {
+      done(null, JSON.parse(text) as unknown);
+    } catch {
+      done(err.validation('Body is not valid JSON'), undefined);
+    }
+  });
+
 
   app.setErrorHandler((error, _req, reply) => {
     if (error instanceof TegataError) return reply.status(error.status).send(error.toJSON());
