@@ -39,15 +39,16 @@ export async function harness(opts: { degraded_mode?: 'allow' | 'deny'; overdraf
   ]);
   store.upsertAction(TENANT, {
     action: 'chat.completion', pricing_mode: 'token_based', fixed_credits: null,
-    default_face_value: 25, min_face_value: 1, fallback_action: 'chat.completion.mini', markup_milli: 1000,
+    default_face_value: 25, min_face_value: 1, fallback_action: 'chat.completion.mini', fallback_model: null, markup_milli: 1000,
   });
   store.upsertAction(TENANT, {
     action: 'chat.completion.mini', pricing_mode: 'token_based', fixed_credits: null,
-    default_face_value: 5, min_face_value: 1, fallback_action: null, markup_milli: 1000,
+    default_face_value: 5, min_face_value: 1, fallback_action: null,
+    fallback_model: 'claude-haiku-4-5', markup_milli: 1000,
   });
   store.upsertAction(TENANT, {
     action: 'image.generate', pricing_mode: 'fixed', fixed_credits: 40,
-    default_face_value: 40, min_face_value: 1, fallback_action: null, markup_milli: 1000,
+    default_face_value: 40, min_face_value: 1, fallback_action: null, fallback_model: null, markup_milli: 1000,
   });
 
   const app = buildApp({ store, clock, rng });

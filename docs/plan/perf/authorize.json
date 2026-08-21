@@ -1,0 +1,93 @@
+{
+  "measured_at": "2026-08-21T03:42:22.960Z",
+  "node": "v22.22.2",
+  "scope": "Single node, localhost, in-process SQLite. Not a distributed measurement.",
+  "duration_seconds_per_level": 12,
+  "target": {
+    "p99_ms": 50,
+    "errors": 0
+  },
+  "runs": [
+    {
+      "connections": 1,
+      "requests_total": 19666,
+      "throughput_rps": 1639,
+      "latency_ms": {
+        "p50": 0,
+        "p90": 0,
+        "p99": 9,
+        "max": 28
+      },
+      "errors": 0,
+      "timeouts": 0,
+      "non_2xx": 0,
+      "meets_p99_target": true
+    },
+    {
+      "connections": 10,
+      "requests_total": 20400,
+      "throughput_rps": 1700,
+      "latency_ms": {
+        "p50": 4,
+        "p90": 15,
+        "p99": 18,
+        "max": 39
+      },
+      "errors": 0,
+      "timeouts": 0,
+      "non_2xx": 0,
+      "meets_p99_target": true
+    },
+    {
+      "connections": 25,
+      "requests_total": 19581,
+      "throughput_rps": 1632,
+      "latency_ms": {
+        "p50": 11,
+        "p90": 24,
+        "p99": 31,
+        "max": 187
+      },
+      "errors": 0,
+      "timeouts": 0,
+      "non_2xx": 0,
+      "meets_p99_target": true
+    },
+    {
+      "connections": 50,
+      "requests_total": 21225,
+      "throughput_rps": 1769,
+      "latency_ms": {
+        "p50": 30,
+        "p90": 35,
+        "p99": 41,
+        "max": 433
+      },
+      "errors": 0,
+      "timeouts": 0,
+      "non_2xx": 0,
+      "meets_p99_target": true
+    },
+    {
+      "connections": 100,
+      "requests_total": 21800,
+      "throughput_rps": 1817,
+      "latency_ms": {
+        "p50": 52,
+        "p90": 64,
+        "p99": 74,
+        "max": 1451
+      },
+      "errors": 0,
+      "timeouts": 0,
+      "non_2xx": 0,
+      "meets_p99_target": false
+    }
+  ],
+  "summary": {
+    "throughput_ceiling_rps": 1817,
+    "highest_concurrency_meeting_p99_target": 50,
+    "interpretation": "Latency past the throughput ceiling is queueing on the single writer, which is the known consequence of the single-node MVP (Q-03 deferred)."
+  },
+  "errors_anywhere": false
+}

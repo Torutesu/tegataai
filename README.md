@@ -16,8 +16,8 @@ Billing systems tell you what happened. TEGATA decides what's allowed to happen.
 
 ## Status
 
-**Specification only.** This repository contains no implementation. It exists to fix the schemas
-and protocols before any code is written, and to invite comment on them.
+**The specification is normative; the Credits implementation is a working MVP.** Wallet is
+specified but deliberately unbuilt.
 
 | Document | Contents |
 |---|---|
@@ -25,7 +25,22 @@ and protocols before any code is written, and to invite comment on them.
 | [`spec/policy.md`](spec/policy.md) | Spend policy schema, shared by Credits and Wallet |
 | [`spec/register.md`](spec/register.md) | Append-only audit ledger format |
 | [`spec/schema/`](spec/schema/) | JSON Schema for the above |
-| [`spec/examples/`](spec/examples/) | Documents that validate against the schemas |
+| [`spec/examples/`](spec/examples/) | Documents that validate against the schemas, including a register whose hash chain is a test vector |
+
+| Package | Contents |
+|---|---|
+| [`packages/core`](packages/core) | Ledger rules, canonicalisation, pricing, policy evaluation. No I/O, no clock, no randomness |
+| [`packages/store`](packages/store) | SQLite storage. The register is append-only because triggers refuse otherwise |
+| [`packages/server`](packages/server) | The authorization service. [Quickstart](packages/server/README.md) |
+| [`packages/sdk`](packages/sdk) | `issue` before, `capture` after, `release` on failure — and a declared posture for when we are unreachable |
+| [`packages/verify`](packages/verify) | `tegata-verify`: check an exported register offline, without trusting the server that produced it |
+
+The JSON schemas are read from `spec/schema` at runtime rather than restated in code, and every
+register entry the server emits is validated against them before it leaves.
+
+```bash
+pnpm install && pnpm verify     # types, lint, determinism, spec, and the full test suite
+```
 
 [`templates/agent-spend-policy.md`](templates/agent-spend-policy.md) is a plain-language version of
 the policy schema, meant to be filled in by a finance and platform team before an agent is given a

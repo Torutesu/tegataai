@@ -113,6 +113,7 @@ export const schemas = {
       default_face_value: nonNegative,
       min_face_value: nonNegative,
       fallback_action: { type: ['string', 'null'], maxLength: 128 },
+      fallback_model: { type: ['string', 'null'], maxLength: 128 },
       markup_milli: { type: 'integer', minimum: 1 },
     },
   },

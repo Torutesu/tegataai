@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import type { JsonObject } from '@tegata/core';
+import { stmt } from '@tegata/store';
 import type { OutboxEvent, Store } from '@tegata/store';
 
 /**
@@ -34,7 +35,7 @@ export function applyRules(
   payload: JsonObject, sourceEventId: string,
 ): void {
   if (subjectId === null) return;
-  const rules = store.db.prepare(
+  const rules = stmt(store.db, 
     'SELECT rule_id,on_event,when_expr,cooldown_hours,holdout_pct,action FROM intervention_rule WHERE tenant_id = ? AND on_event = ? AND enabled = 1',
   ).all(tenantId, type) as RuleRow[];
 
@@ -45,7 +46,7 @@ export function applyRules(
     // Seeded by subject and rule, so a subject's group assignment is stable and a
     // replay lands in the same arm.
     const holdout = pickHoldout(store, tenantId, rule.rule_id, subjectId, rule.holdout_pct);
-    store.db.prepare(
+    stmt(store.db, 
       'INSERT OR REPLACE INTO rule_firing (tenant_id,rule_id,subject_id,fired_at,holdout) VALUES (?,?,?,?,?)',
     ).run(tenantId, rule.rule_id, subjectId, store.now(), holdout ? 1 : 0);
 
@@ -88,7 +89,7 @@ function resolveField(
     case 'subject.available':
       return store.balances(tenantId, subjectId).available;
     case 'subject.lifetime_credits_purchased': {
-      const r = store.db.prepare(
+      const r = stmt(store.db, 
         "SELECT COALESCE(SUM(credits_granted),0) AS n FROM entitlement WHERE tenant_id = ? AND subject_id = ? AND source IN ('topup','subscription')",
       ).get(tenantId, subjectId) as { n: number };
       return r.n;
@@ -106,7 +107,7 @@ function resolveField(
 function inCooldown(store: Store, tenantId: string, rule: RuleRow, subjectId: string): boolean {
   if (rule.cooldown_hours <= 0) return false;
   const since = new Date(store.nowMs() - rule.cooldown_hours * 3_600_000).toISOString();
-  const row = store.db.prepare(
+  const row = stmt(store.db, 
     'SELECT 1 AS x FROM rule_firing WHERE tenant_id = ? AND rule_id = ? AND subject_id = ? AND fired_at >= ? LIMIT 1',
   ).get(tenantId, rule.rule_id, subjectId, since);
   return row !== undefined;

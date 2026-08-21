@@ -105,6 +105,8 @@ export interface ActionSpec {
   default_face_value: Credits;
   min_face_value: Credits;
   fallback_action: string | null;
+  /** The model the fallback action would use, so a remedy can be priced honestly. */
+  fallback_model: string | null;
   /** Thousandths. 1000 = x1.0 — a multiplier without a float. */
   markup_milli: number;
 }

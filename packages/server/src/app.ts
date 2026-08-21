@@ -2,7 +2,7 @@ import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest }
 import {
   type Clock, type JsonObject, type Rng, TegataError, canonicalize, err, sha256Hex, toIso,
 } from '@tegata/core';
-import { Store, type TenantRow } from '@tegata/store';
+import { Store, type TenantRow , stmt } from '@tegata/store';
 import { validate } from './schemas.js';
 import {
   capture, directUsage, expireMatured, issue, release, toEntryJson, type IssueResult,
@@ -90,7 +90,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   app.post('/v1/authorizations', async (req, reply) => {
     validate('issue', req.body);
     return idempotent<IssueResult>(req, reply, () => {
-      const result = issue(store, req.tenant.tenant_id, req.body as never);
+      const result = issue(store, req.tenant.tenant_id, req.body as never, req.tenant);
       if (result.decision === 'dishonored') {
         // A refusal is a correct answer, not a transport failure: 200 with a decision,
         // plus a header so proxies and logs can tell the two apart (spec §4.1).
@@ -251,6 +251,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       default_face_value: b.default_face_value as number,
       min_face_value: (b.min_face_value as number | undefined) ?? 1,
       fallback_action: (b.fallback_action as string | null | undefined) ?? null,
+      fallback_model: (b.fallback_model as string | null | undefined) ?? null,
       markup_milli: (b.markup_milli as number | undefined) ?? 1000,
     });
     return { action: req.params.action, ...store.getAction(req.tenant.tenant_id, req.params.action) };
@@ -272,7 +273,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   app.put<{ Params: { rule_id: string } }>('/v1/rules/:rule_id', async (req) => {
     validate('rule', req.body);
     const b = req.body as Record<string, unknown>;
-    store.db.prepare(
+    stmt(store.db, 
       `INSERT INTO intervention_rule (tenant_id,rule_id,on_event,when_expr,cooldown_hours,holdout_pct,action,enabled)
        VALUES (?,?,?,?,?,?,?,?)
        ON CONFLICT(tenant_id,rule_id) DO UPDATE SET on_event=excluded.on_event,
@@ -288,12 +289,12 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   });
 
   app.get('/v1/rules', async (req) => ({
-    rules: store.db.prepare('SELECT rule_id,on_event,cooldown_hours,holdout_pct,enabled FROM intervention_rule WHERE tenant_id = ?')
+    rules: stmt(store.db, 'SELECT rule_id,on_event,cooldown_hours,holdout_pct,enabled FROM intervention_rule WHERE tenant_id = ?')
       .all(req.tenant.tenant_id),
   }));
 
   app.get<{ Params: { rule_id: string } }>('/v1/rules/:rule_id/firings', async (req) => ({
-    firings: store.db.prepare(
+    firings: stmt(store.db, 
       'SELECT subject_id,fired_at,holdout FROM rule_firing WHERE tenant_id = ? AND rule_id = ? ORDER BY fired_at',
     ).all(req.tenant.tenant_id, req.params.rule_id),
   }));

@@ -3,7 +3,7 @@ import {
   type RegisterEntry, type Rng, UlidFactory, deriveBalancesSelfContained, sealEntry, verifyChain,
   ZERO_HASH, overdraftRepayment, consume, sha256Hex, canonicalize,
 } from '@tegata/core';
-import { all, one, openDb, run, type Db } from './db.js';
+import { all, one, openDb, run, stmt, type Db } from './db.js';
 import type {
   ActionSpec, AppendRequest, AuthorizationRow, OutboxEvent, SubjectRow, TenantRow,
 } from './types.js';
@@ -418,7 +418,7 @@ export class Store {
    * concurrent replays collide, so exactly one caller proceeds (AC-04).
    */
   claimIdempotent(tenantId: string, key: string, requestHash: string): boolean {
-    const res = this.db.prepare(
+    const res = stmt(this.db, 
       `INSERT OR IGNORE INTO idempotency (tenant_id,idem_key,request_hash,status_code,response,created_at)
        VALUES (?,?,?,0,'',?)`,
     ).run(tenantId, key, requestHash, this.now());
@@ -436,7 +436,7 @@ export class Store {
   }
 
   purgeIdempotency(beforeIso: string): number {
-    const r = this.db.prepare('DELETE FROM idempotency WHERE created_at < ?').run(beforeIso);
+    const r = stmt(this.db, 'DELETE FROM idempotency WHERE created_at < ?').run(beforeIso);
     return r.changes;
   }
 
@@ -445,20 +445,21 @@ export class Store {
   upsertAction(tenantId: string, a: ActionSpec): void {
     run(this.db,
       `INSERT INTO action_catalog (tenant_id,action,pricing_mode,fixed_credits,default_face_value,
-        min_face_value,fallback_action,markup_milli)
-       VALUES (?,?,?,?,?,?,?,?)
+        min_face_value,fallback_action,fallback_model,markup_milli)
+       VALUES (?,?,?,?,?,?,?,?,?)
        ON CONFLICT(tenant_id,action) DO UPDATE SET
          pricing_mode=excluded.pricing_mode, fixed_credits=excluded.fixed_credits,
          default_face_value=excluded.default_face_value, min_face_value=excluded.min_face_value,
-         fallback_action=excluded.fallback_action, markup_milli=excluded.markup_milli`,
+         fallback_action=excluded.fallback_action, fallback_model=excluded.fallback_model,
+         markup_milli=excluded.markup_milli`,
       tenantId, a.action, a.pricing_mode, a.fixed_credits, a.default_face_value,
-      a.min_face_value, a.fallback_action, a.markup_milli);
+      a.min_face_value, a.fallback_action, a.fallback_model, a.markup_milli);
   }
 
   getAction(tenantId: string, action: string): ActionSpec | undefined {
     return one<ActionSpec>(this.db,
       `SELECT action,pricing_mode,fixed_credits,default_face_value,min_face_value,
-              fallback_action,markup_milli
+              fallback_action,fallback_model,markup_milli
          FROM action_catalog WHERE tenant_id = ? AND action = ?`, tenantId, action);
   }
 
@@ -534,7 +535,7 @@ export class Store {
   }
 
   recordStripeEvent(eventId: string, tenantId: string): boolean {
-    const r = this.db.prepare(
+    const r = stmt(this.db, 
       'INSERT OR IGNORE INTO stripe_event (event_id,tenant_id,processed_at) VALUES (?,?,?)',
     ).run(eventId, tenantId, this.now());
     return r.changes === 1;

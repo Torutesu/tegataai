@@ -32,15 +32,30 @@ export function migrate(db: Db): void {
   db.prepare('INSERT INTO schema_meta (key, value) VALUES (?, ?)').run('version', '1');
 }
 
+/**
+ * Statements are compiled once and reused. Preparing on every call costs about four
+ * times as much as running a cached one, and on the authorize path — which runs six
+ * statements per request — that is most of the budget.
+ */
+const cache = new WeakMap<Db, Map<string, Database.Statement>>();
+
+export function stmt(db: Db, sql: string): Database.Statement {
+  let byDb = cache.get(db);
+  if (byDb === undefined) { byDb = new Map(); cache.set(db, byDb); }
+  let prepared = byDb.get(sql);
+  if (prepared === undefined) { prepared = db.prepare(sql); byDb.set(sql, prepared); }
+  return prepared;
+}
+
 /** better-sqlite3 returns unknown rows; this keeps the casts in one place. */
 export function all<T>(db: Db, sql: string, ...params: unknown[]): T[] {
-  return db.prepare(sql).all(...(params as never[])) as T[];
+  return stmt(db, sql).all(...(params as never[])) as T[];
 }
 
 export function one<T>(db: Db, sql: string, ...params: unknown[]): T | undefined {
-  return db.prepare(sql).get(...(params as never[])) as T | undefined;
+  return stmt(db, sql).get(...(params as never[])) as T | undefined;
 }
 
 export function run(db: Db, sql: string, ...params: unknown[]): void {
-  db.prepare(sql).run(...(params as never[]));
+  stmt(db, sql).run(...(params as never[]));
 }

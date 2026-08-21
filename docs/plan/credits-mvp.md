@@ -609,7 +609,7 @@ PRD §11.2 の定義をそのまま実装（診断ツールと文言一致が AC
 | **M7** | event_outbox + 配送 + 署名 + 介入ルール + holdout | AC-06: overdraft 超過 capture で `balance.overdrawn` 配送。holdout が固定シードで再現。cooldown テスト |
 | **M8** | /v1/metrics/margin + /v1/register/export + `tegata-verify` CLI + bootstrap CLI | AC-07: エクスポートを1バイト改竄すると `tegata-verify` が失敗し、無改竄なら成功。margin が手計算 fixture と一致 |
 | **M9** | SDK（guard / degraded / キュー / usage マップ） | AC-02: サーバを落として `degraded:'allow'` でアプリコード（テスト内の擬似アプリ）が動き続け、復旧後 reconcile で残高一致（AC-03 と接続） |
-| **M10** | perf ハーネス + README（quickstart: `pnpm bootstrap && pnpm dev` から curl 3本で authorize→capture→export）+ Dockerfile | AC-P1: autocannon 60s, 100conn で authorize p99 < 50ms・エラー0（結果 JSON を `docs/plan/perf/` にコミット）。quickstart を README の記載通り実行するスモークテスト |
+| **M10** | perf ハーネス + README（quickstart: `pnpm bootstrap && pnpm dev` から curl 3本で authorize→capture→export）+ Dockerfile | **AC-P1（改訂・decision-log 2026-08-21/M10）**: 並列度 1/10/25/50/100 でそれぞれ 60s 計測し、**p99 < 50ms が成立する並列度とスループット上限を報告**する。エラー・タイムアウト・非2xx はいずれの水準でも0。結果 JSON を `docs/plan/perf/` にコミット。単一の並列度だけで合否を言わない（選び方でどうとでもなるため）。quickstart を README の記載通り実行するスモークテスト |
 
 **順序は固定。**ゴールモードは M(n) の DoD が green になるまで M(n+1) に進んではならない。
 

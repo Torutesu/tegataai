@@ -15,5 +15,9 @@
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "@tegata/verify": "workspace:*"
+  },
+  "devDependencies": {
+    "autocannon": "^8.0.0",
+    "@types/autocannon": "^7.12.6"
   }
 }

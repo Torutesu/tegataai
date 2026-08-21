@@ -4,7 +4,8 @@ import {
   clampMaturitySeconds, err, evaluate, hasMatured, parseWindowMs, priceActual, priceEstimate,
   toIso,
 } from '@tegata/core';
-import type { AuthorizationRow, Store } from '@tegata/store';
+import { stmt } from '@tegata/store';
+import type { AuthorizationRow, Store, TenantRow } from '@tegata/store';
 import { assertRegisterEntry } from './schemas.js';
 import { fireEvent } from './events.js';
 
@@ -48,33 +49,37 @@ function actionOrThrow(store: Store, tenantId: string, action: string): ActionSp
   return spec;
 }
 
+/**
+ * One query, with a tenant's negotiated rate taking precedence over the published
+ * table. Two round trips on the authorize path is a round trip too many.
+ */
+const RATE_SQL = `
+  SELECT provider, model, unit, input_micro_usd_per_unit, output_micro_usd_per_unit,
+         cached_input_micro_usd_per_unit
+    FROM (
+      SELECT provider, model, 'token' AS unit, input_micro_usd_per_unit,
+             output_micro_usd_per_unit, cached_input_micro_usd_per_unit, 0 AS rank
+        FROM rate_override WHERE tenant_id = ? AND provider = ? AND model = ?
+      UNION ALL
+      SELECT provider, model, unit, input_micro_usd_per_unit,
+             output_micro_usd_per_unit, cached_input_micro_usd_per_unit, 1 AS rank
+        FROM cost_table WHERE version = ? AND provider = ? AND model = ?
+    ) ORDER BY rank LIMIT 1`;
+
 function rateLookup(store: Store, tenantId: string, pin: string | null) {
   const version = pin ?? store.latestCostVersion() ?? '';
-  return (provider: string, model: string) => {
-    const override = store.db.prepare(
-      `SELECT provider, model, 'token' AS unit, input_micro_usd_per_unit, output_micro_usd_per_unit,
-              cached_input_micro_usd_per_unit
-         FROM rate_override WHERE tenant_id = ? AND provider = ? AND model = ?`,
-    ).get(tenantId, provider, model);
-    if (override !== undefined) return override as never;
-    const row = store.db.prepare(
-      `SELECT provider, model, unit, input_micro_usd_per_unit, output_micro_usd_per_unit,
-              cached_input_micro_usd_per_unit
-         FROM cost_table WHERE version = ? AND provider = ? AND model = ?`,
-    ).get(version, provider, model);
-    return row as never;
-  };
+  return (provider: string, model: string) =>
+    stmt(store.db, RATE_SQL).get(tenantId, provider, model, version, provider, model) as never;
 }
 
 /** T1 / T2 — issue or dishonor. Never throws for a business refusal (spec §4.1). */
-export function issue(store: Store, tenantId: string, req: IssueRequest): IssueResult {
-  const tenant = store.getTenant(tenantId);
+export function issue(store: Store, tenantId: string, req: IssueRequest, known?: TenantRow): IssueResult {
+  const tenant = known ?? store.getTenant(tenantId);
   if (tenant === undefined) throw err.notFound('Tenant', tenantId);
   const action = actionOrThrow(store, tenantId, req.action);
 
   return store.withSubject(() => {
-    store.ensureSubject(tenantId, req.subject_id);
-    const subject = store.getSubject(tenantId, req.subject_id);
+    const subject = store.ensureSubject(tenantId, req.subject_id);
 
     const pricing = priceEstimate(
       { action, creditUnitMicroUsd: tenant.credit_unit_micro_usd, lookupRate: rateLookup(store, tenantId, tenant.cost_table_pin) },
@@ -94,16 +99,23 @@ export function issue(store: Store, tenantId: string, req: IssueRequest): IssueR
       const out: IssueDishonored = { decision: 'dishonored', reason, available, required: faceValue };
       if (rule !== undefined) out.rule = rule;
       // The remedy proposes; the caller decides. We never route the request ourselves.
+      // It is priced against the model the fallback would actually use, and withheld
+      // entirely unless it is both cheaper than the refusal and affordable now — a
+      // "cheaper option" that costs the same or still cannot be paid for is not a
+      // remedy, and offering one would mislead the caller at the worst moment.
       if (action.fallback_action !== null && reason === 'insufficient_balance') {
         const fb = store.getAction(tenantId, action.fallback_action);
         if (fb !== undefined) {
-          out.remedy = {
-            fallback_action: fb.action,
-            fallback_face_value: priceEstimate(
-              { action: fb, creditUnitMicroUsd: tenant.credit_unit_micro_usd, lookupRate: rateLookup(store, tenantId, tenant.cost_table_pin) },
-              req.estimate,
-            ).credits,
-          };
+          const fbEstimate = req.estimate === undefined || fb.fallback_model === null
+            ? req.estimate
+            : { ...req.estimate, model: fb.fallback_model };
+          const fbPrice = priceEstimate(
+            { action: fb, creditUnitMicroUsd: tenant.credit_unit_micro_usd, lookupRate: rateLookup(store, tenantId, tenant.cost_table_pin) },
+            fbEstimate,
+          ).credits;
+          if (fbPrice < faceValue && fbPrice <= available) {
+            out.remedy = { fallback_action: fb.action, fallback_face_value: fbPrice };
+          }
         }
       }
       fireEvent(store, tenantId, 'authorization.dishonored', req.subject_id, {
@@ -116,7 +128,7 @@ export function issue(store: Store, tenantId: string, req: IssueRequest): IssueR
       return out;
     };
 
-    if (subject === undefined || subject.status !== 'active') return dishonor('subject_suspended');
+    if (subject.status !== 'active') return dishonor('subject_suspended');
 
     const policies = tenantPolicies(store, tenantId);
     if (policies.length > 0) {
@@ -160,7 +172,8 @@ export function issue(store: Store, tenantId: string, req: IssueRequest): IssueR
     }
     return {
       decision: 'authorized', authorization_id: id, face_value: faceValue,
-      available_after_hold: store.balances(tenantId, req.subject_id).available,
+      // A hold does not move the balance, so this needs no second read.
+      available_after_hold: available - faceValue,
       maturity: row.maturity,
     };
   });

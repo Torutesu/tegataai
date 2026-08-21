@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { type JsonObject, err, toIso } from '@tegata/core';
+import { stmt } from '@tegata/store';
 import type { Store } from '@tegata/store';
 import { fireEvent } from './events.js';
 import { refreshOutcome } from '@tegata/core';
@@ -102,7 +103,7 @@ function handleInvoicePaid(store: Store, tenantId: string, obj: Record<string, u
     for (const line of lines) {
       const priceId = ((line.price ?? {}) as Record<string, unknown>).id;
       if (typeof priceId !== 'string') continue;
-      const rule = store.db.prepare(
+      const rule = stmt(store.db, 
         'SELECT credits_per_period,refresh_policy,rollover_cap_credits,priority FROM credit_grant_rule WHERE tenant_id = ? AND stripe_price_id = ?',
       ).get(tenantId, priceId) as {
         credits_per_period: number; refresh_policy: 'reset' | 'rollover' | 'rollover_capped';

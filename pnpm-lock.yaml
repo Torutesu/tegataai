@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@types/autocannon':
+        specifier: ^7.12.6
+        version: 7.12.7
       '@types/better-sqlite3':
         specifier: ^7.6.11
         version: 7.6.13
@@ -74,6 +77,13 @@ importers:
       fastify:
         specifier: ^5.2.0
         version: 5.12.1
+    devDependencies:
+      '@types/autocannon':
+        specifier: ^7.12.6
+        version: 7.12.7
+      autocannon:
+        specifier: ^8.0.0
+        version: 8.0.0
 
   packages/store:
     dependencies:
@@ -607,6 +617,9 @@ packages:
     resolution: {integrity: sha512-/gDJaRs4gl0NPIwqCz+6PkpmhhjRAD2j6P4rSNHBzUkO3naEx2mIU0pRle1vUNRQ7mE/+8OOeXLTv/J56FKiQg==}
     cpu: [x64]
     os: [win32]
+
+  '@types/autocannon@7.12.7':
+    resolution: {integrity: sha512-Pd4nPf7wRpacULa6D/EC9x3CwzFQXwA0z5WFuik/fvJjW44V3WzBTM3jtt8nSBoflUNgswPiMCtgrr1bwnAcMg==}
 
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
@@ -2000,6 +2013,10 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.62.5':
     optional: true
+
+  '@types/autocannon@7.12.7':
+    dependencies:
+      '@types/node': 22.20.1
 
   '@types/better-sqlite3@7.6.13':
     dependencies:

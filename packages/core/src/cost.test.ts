@@ -15,7 +15,7 @@ const image: CostRate = {
 
 const action = (over: Partial<ActionSpec> = {}): ActionSpec => ({
   action: 'chat.completion', pricing_mode: 'token_based', fixed_credits: null,
-  default_face_value: 25, min_face_value: 1, fallback_action: null, markup_milli: 1000, ...over,
+  default_face_value: 25, min_face_value: 1, fallback_action: null, fallback_model: null, markup_milli: 1000, ...over,
 });
 
 const lookup = (p: string, m: string): CostRate | undefined =>

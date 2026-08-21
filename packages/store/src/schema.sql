@@ -118,6 +118,7 @@ CREATE TABLE action_catalog (
   default_face_value INTEGER NOT NULL,
   min_face_value     INTEGER NOT NULL DEFAULT 1,
   fallback_action    TEXT,
+  fallback_model     TEXT,
   markup_milli       INTEGER NOT NULL DEFAULT 1000,  -- 1000 = ×1.0（整数のみ規則のため千分率）
   PRIMARY KEY (tenant_id, action)
 );

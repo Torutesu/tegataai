@@ -35,17 +35,34 @@ describe('issue', () => {
     await h.close();
   });
 
-  it('proposes the cheaper action but does not take it', async () => {
+  it('proposes the cheaper action, priced by the model it would really use', async () => {
     const h = await harness();
-    await grant(h, 'u1', 5);
+    await grant(h, 'u1', 100);
     const res = await h.post('/v1/authorizations', {
       subject_id: 'u1', action: 'chat.completion',
-      estimate: { ...OPUS, input_tokens: 100_000, max_output_tokens: 10_000 },
+      estimate: { ...OPUS, input_tokens: 200_000, max_output_tokens: 20_000 },
     });
-    expect(res.body.remedy).toMatchObject({ fallback_action: 'chat.completion.mini' });
+    expect(res.body.decision).toBe('dishonored');
+    const remedy = res.body.remedy as { fallback_action: string; fallback_face_value: number };
+    expect(remedy.fallback_action).toBe('chat.completion.mini');
+    // Opus would have cost 225 credits; haiku costs 15. Both numbers are real.
+    expect(remedy.fallback_face_value).toBeLessThan(res.body.required as number);
+    expect(remedy.fallback_face_value).toBeLessThanOrEqual(res.body.available as number);
     // Nothing was authorised on the caller's behalf.
-    const sub = await h.get('/v1/subjects/u1');
-    expect(sub.body.reserved).toBe(0);
+    expect((await h.get('/v1/subjects/u1')).body.reserved).toBe(0);
+    await h.close();
+  });
+
+  it('withholds a remedy that is not actually cheaper or not affordable', async () => {
+    const h = await harness();
+    await grant(h, 'u1', 1);
+    const res = await h.post('/v1/authorizations', {
+      subject_id: 'u1', action: 'chat.completion',
+      estimate: { ...OPUS, input_tokens: 200_000, max_output_tokens: 20_000 },
+    });
+    // The cheap lane still costs more than the one credit available, so proposing it
+    // would send the caller into a second refusal.
+    expect(res.body.remedy).toBeUndefined();
     await h.close();
   });
 
