@@ -151,7 +151,7 @@
   </div>
 </section>
 
-<section>
+<section id="sec-chart">
   <h2>Margin distribution</h2>
   <div class="legend">
     <span><i style="background:var(--shu)"></i>negative margin</span>
@@ -160,14 +160,14 @@
   <div id="chartwrap"><div id="tip"></div><svg id="chart" width="820" height="240"></svg></div>
 </section>
 
-<section>
+<section id="sec-top">
   <h2>Top cost users</h2>
   <table id="topusers"><thead><tr>
     <th>User</th><th>Plan</th><th class="n">Revenue</th><th class="n">Cost</th><th class="n">Margin</th>
   </tr></thead><tbody></tbody></table>
 </section>
 
-<section>
+<section id="sec-plans">
   <h2>By plan</h2>
   <table id="plans"><thead><tr>
     <th>Plan</th><th class="n">Users</th><th class="n">Negative</th><th class="n">Avg margin</th><th class="n">Total cost</th>
@@ -373,10 +373,11 @@ function compute(){
   }
 
   // --- cost per key ---
-  const costByKey={}; let totalCost=0;
+  const costByKey={}; let totalCost=0, usageInWindow=0, usageUnusable=0;
   for(const r of S.usage.rows){
     const t=when(r[up.date]);
     if(isFinite(t)&&(t<wStart||t>wEnd)){ continue; }
+    usageInWindow++;
     let c=up.cost?money(r[up.cost]):NaN;
     if(!isFinite(c)){
       const m=r[up.model], rate=S.rates[m];
@@ -384,7 +385,7 @@ function compute(){
         c=(money(r[up.intok])||0)/1e6*(rate.in||0)+(money(r[up.outtok])||0)/1e6*(rate.out||0);
       }
     }
-    if(!isFinite(c)){ skip("usage row without resolvable cost"); continue; }
+    if(!isFinite(c)){ usageUnusable++; skip("usage row without resolvable cost"); continue; }
     const k=r[up.key]||"(no key)";
     costByKey[k]=(costByKey[k]||0)+c; totalCost+=c;
   }
@@ -413,7 +414,22 @@ function compute(){
   const negUsers=users.filter(u=>u.margin<0);
   const negCost=negUsers.reduce((a,u)=>a+u.cost,0);
   const allCost=users.reduce((a,u)=>a+u.cost,0);
+  // --- can we honestly report a headline? ---
+  const blockers=[];
+  if(!users.length)
+    blockers.push("No user could be built from these files. Check that the Stripe column mapping "
+      +"points at a column of cus_… ids, and that the dates fall inside the window.");
+  if(users.length && allCost<=0)
+    blockers.push(usageUnusable
+      ? `None of the ${usageInWindow} usage rows in the window had a resolvable cost. `
+        +"Map a cost column, or enter per-model rates, so cost is read rather than assumed."
+      : "No provider cost fell inside the window. Check the usage file's date column.");
+  if(users.length && allCost>0 && usageInWindow && usageUnusable/usageInWindow>0.5)
+    blockers.push(`${usageUnusable} of ${usageInWindow} usage rows in the window had no resolvable `
+      +"cost. More than half the usage is missing, so the share below would understate your cost.");
+
   return { users, negUsers, negCost, allCost, unattributed, prorated, excl,
+    usageInWindow, usageUnusable, blockers,
     cur:(mainCur||"usd").toUpperCase(), days,
     wStart, wEnd, ms:performance.now()-t0 };
 }
@@ -435,14 +451,24 @@ function render(R){
   const est=R.prorated?" (estimate)":"";
   const negShare=R.users.length?R.negUsers.length/R.users.length:0;
   const costShare=R.allCost?R.negCost/R.allCost:0;
-  $("headline").innerHTML =
-    `<span class="neg">${pct(negShare)}</span> of your users are negative-margin${est}.<br>` +
-    `They consume <span class="neg">${pct(costShare)}</span> of your model spend.`;
-  $("subline").textContent =
-    `${R.users.length} users · last ${R.days} days ending ${new Date(R.wEnd).toISOString().slice(0,10)}`
-    + ` · ${R.cur} · computed in ${R.ms.toFixed(0)} ms`;
+  const blocked=R.blockers.length>0;
 
-  drawHist(R);
+  if(blocked){
+    // Refusing to answer is the honest output. A confident 0% computed from data the tool
+    // could not read is worse than no number at all.
+    $("headline").innerHTML='<span class="neg">Not enough to answer.</span>';
+    $("subline").innerHTML=R.blockers.map(b=>b.replace(/</g,"&lt;")).join("<br>");
+  } else {
+    $("headline").innerHTML =
+      `<span class="neg">${pct(negShare)}</span> of your users are negative-margin${est}.<br>` +
+      `They consume <span class="neg">${pct(costShare)}</span> of your model spend.`;
+    $("subline").textContent =
+      `${R.users.length} users · last ${R.days} days ending ${new Date(R.wEnd).toISOString().slice(0,10)}`
+      + ` · ${R.cur} · computed in ${R.ms.toFixed(0)} ms`;
+  }
+  // sections that only make sense with a usable answer
+  ["sec-chart","sec-top","sec-plans"].forEach(id=>$(id).classList.toggle("hidden",blocked));
+  if(!blocked) drawHist(R);
 
   const tb=$("topusers").querySelector("tbody"); tb.innerHTML="";
   [...R.users].sort((a,b)=>b.cost-a.cost).slice(0,20).forEach(u=>{
@@ -468,6 +494,9 @@ function render(R){
 
   const ex=$("excluded"); ex.innerHTML="";
   const items=Object.entries(R.excl.reasons).map(([r,n])=>`<li>${n} rows — ${r}</li>`);
+  if(R.usageInWindow) items.unshift(
+    `<li>${R.usageInWindow-R.usageUnusable} of ${R.usageInWindow} usage rows in the window`
+    +` had a resolvable cost.</li>`);
   if(R.unattributed>0) items.push(
     `<li><b>${fmt(R.unattributed,R.cur)} of provider cost could not be attributed to any
      customer</b> — keys with no cus_ match and no map entry. It is excluded from every figure
