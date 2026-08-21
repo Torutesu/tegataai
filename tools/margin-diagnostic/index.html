@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Margin Diagnostic — TEGATA</title>
+<meta name="description" content="How many of your users cost more to serve than they pay you. Computed in your browser; nothing is uploaded.">
+<style>
+  :root{
+    --paper:#F7F4EE; --paper-deep:#EFEBE2; --ink:#211E1A; --ink2:#6B6659;
+    --rule:#CFC9BB; --shu:#B8432F; --pos:#8A8272;
+    --mono:'IBM Plex Mono','SFMono-Regular',Consolas,Menlo,monospace;
+    --sans:Inter,'Helvetica Neue',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--sans);padding:0 20px 80px}
+  .sheet{max-width:880px;margin:0 auto}
+  header{display:flex;align-items:center;gap:14px;padding:28px 0 20px;border-bottom:1px solid var(--rule)}
+  header svg{flex:none}
+  header h1{font-size:19px;font-weight:600;letter-spacing:.01em}
+  header .no{margin-left:auto;font:12px var(--mono);color:var(--ink2)}
+  .lede{padding:22px 0;border-bottom:1px solid var(--rule)}
+  .lede p{max-width:600px}
+  .lede .quiet{color:var(--ink2);font-size:13px;margin-top:8px}
+  .quiet code{font-family:var(--mono);font-size:12px}
+  h2{font-size:15px;font-weight:600;margin:0 0 10px}
+  section{padding:24px 0;border-bottom:1px solid var(--rule)}
+  .drops{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.drops{grid-template-columns:1fr}}
+  .drop{border:1.5px dashed var(--rule);background:#fff;padding:16px;min-height:120px;cursor:pointer}
+  .drop.over{border-color:var(--shu)}
+  .drop b{display:block;font-size:13px;margin-bottom:4px}
+  .drop .hint{font-size:12.5px;color:var(--ink2)}
+  .drop .state{font:12px var(--mono);margin-top:10px;color:var(--ink2);word-break:break-all}
+  .drop .state.ok{color:var(--ink)}
+  .drop input{display:none}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  button{font:600 13.5px var(--sans);border:1.5px solid var(--ink);background:#fff;color:var(--ink);
+         padding:9px 16px;cursor:pointer}
+  button.primary{background:var(--shu);border-color:var(--shu);color:#fff}
+  button:disabled{opacity:.4;cursor:default}
+  select,input[type=number]{font:13px var(--mono);border:1px solid var(--rule);background:#fff;padding:5px 7px;color:var(--ink)}
+  label{font-size:12.5px;color:var(--ink2)}
+  .map{display:grid;grid-template-columns:170px 1fr;gap:6px 12px;align-items:center;margin-top:10px}
+  .estimate{display:inline-block;font:11px var(--mono);color:#fff;background:var(--ink2);padding:1px 7px;
+            margin-left:8px;vertical-align:2px}
+  /* results */
+  .headline{font-size:26px;line-height:1.35;font-weight:600;max-width:640px}
+  .headline .neg{color:var(--shu)}
+  .sub{color:var(--ink2);margin-top:8px;font-size:13.5px}
+  table{border-collapse:collapse;width:100%;margin-top:12px;font-size:13px}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);
+     text-align:left;font-weight:600;background:var(--paper-deep)}
+  th,td{padding:7px 10px;border-bottom:1px solid var(--rule)}
+  td.n,th.n{text-align:right;font-family:var(--mono);font-size:12.5px}
+  td.neg{color:var(--shu)}
+  .panel{background:#fff;border:1px solid var(--rule);padding:16px;margin-top:14px}
+  .panel h3{font-size:13px;font-weight:600;margin-bottom:8px}
+  .panel ul{padding-left:18px;font-size:13px;color:var(--ink2)}
+  .panel li{margin:3px 0}
+  .legend{display:flex;gap:18px;font-size:12.5px;color:var(--ink2);margin:8px 0 2px}
+  .legend i{display:inline-block;width:10px;height:10px;margin-right:6px}
+  #chartwrap{position:relative;background:#fff;border:1px solid var(--rule);padding:12px;margin-top:12px;overflow-x:auto}
+  #tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--paper);
+       font:12px var(--mono);padding:5px 8px;display:none;white-space:nowrap;z-index:2}
+  footer{padding-top:28px;font-size:12.5px;color:var(--ink2)}
+  footer a{color:var(--ink)}
+  .hidden{display:none!important}
+  @media print{
+    body{padding:0;background:#fff}
+    .noprint{display:none!important}
+    section{border:none;page-break-inside:avoid}
+    #chartwrap{border:none}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<header>
+  <svg width="34" height="34" viewBox="0 0 96 96" aria-hidden="true">
+    <defs><clipPath id="sl"><rect width="44" height="96"/></clipPath>
+    <clipPath id="sr"><rect x="52" width="44" height="96"/></clipPath></defs>
+    <g fill="none" stroke="#B8432F" stroke-width="14">
+      <circle cx="48" cy="48" r="34" clip-path="url(#sl)"/>
+      <circle cx="48" cy="48" r="34" clip-path="url(#sr)"/>
+    </g>
+  </svg>
+  <h1>Margin Diagnostic</h1>
+  <span class="no" id="docno">No. —</span>
+</header>
+
+<div class="lede">
+  <p>How many of your users cost more to serve than they pay you. Two exports in, two numbers out.</p>
+  <p class="quiet">Everything is computed in this page. Nothing is uploaded — there is no server to
+  upload to. Verify it: open your browser's network tab, or load this file offline.
+  <span id="netstate"></span></p>
+</div>
+
+<section class="noprint">
+  <h2>1 · Data</h2>
+  <div class="drops">
+    <label class="drop" id="dz-stripe">
+      <b>Stripe export</b>
+      <span class="hint">Payments or invoices CSV. Needs a customer id (cus_…), an amount, and a date.</span>
+      <span class="state" id="st-stripe">no file</span>
+      <input type="file" accept=".csv" id="f-stripe">
+    </label>
+    <label class="drop" id="dz-usage">
+      <b>Provider usage export</b>
+      <span class="hint">Anthropic / OpenAI usage CSV — or any CSV with a per-user key and a cost
+      (or token counts).</span>
+      <span class="state" id="st-usage">no file</span>
+      <input type="file" accept=".csv" id="f-usage">
+    </label>
+  </div>
+  <div class="row">
+    <label class="drop" style="min-height:0;flex:1" id="dz-map">
+      <b>Key map <span style="font-weight:400;color:var(--ink2)">(optional)</span></b>
+      <span class="hint">Two columns: stripe customer id, provider key. Skip it if your usage export
+      already carries cus_… ids.</span>
+      <span class="state" id="st-map">no file</span>
+      <input type="file" accept=".csv" id="f-map">
+    </label>
+  </div>
+  <div id="mapping" class="hidden">
+    <div class="panel"><h3>Column mapping</h3>
+      <div class="map" id="mapgrid"></div>
+      <div class="map" id="rategrid" style="margin-top:14px"></div>
+    </div>
+  </div>
+  <div class="row">
+    <label>Window
+      <select id="win"><option value="30" selected>last 30 days</option>
+        <option value="60">last 60 days</option><option value="90">last 90 days</option></select>
+    </label>
+    <button class="primary" id="run" disabled>Compute</button>
+    <button id="sample">Load sample data</button>
+  </div>
+</section>
+
+<div id="results" class="hidden">
+<section>
+  <h2>2 · Result <span id="est-flag" class="estimate hidden">ESTIMATE — see assumptions</span></h2>
+  <p class="headline" id="headline"></p>
+  <p class="sub" id="subline"></p>
+  <div class="row noprint">
+    <button id="export-csv">Export per-user CSV</button>
+    <button id="print">Export PDF</button>
+    <a id="book" class="hidden"><button class="primary">Talk about this result — 30 min</button></a>
+  </div>
+</section>
+
+<section>
+  <h2>Margin distribution</h2>
+  <div class="legend">
+    <span><i style="background:var(--shu)"></i>negative margin</span>
+    <span><i style="background:var(--pos)"></i>positive margin</span>
+  </div>
+  <div id="chartwrap"><div id="tip"></div><svg id="chart" width="820" height="240"></svg></div>
+</section>
+
+<section>
+  <h2>Top cost users</h2>
+  <table id="topusers"><thead><tr>
+    <th>User</th><th>Plan</th><th class="n">Revenue</th><th class="n">Cost</th><th class="n">Margin</th>
+  </tr></thead><tbody></tbody></table>
+</section>
+
+<section>
+  <h2>By plan</h2>
+  <table id="plans"><thead><tr>
+    <th>Plan</th><th class="n">Users</th><th class="n">Negative</th><th class="n">Avg margin</th><th class="n">Total cost</th>
+  </tr></thead><tbody></tbody></table>
+</section>
+
+<section>
+  <h2>Excluded &amp; unattributed</h2>
+  <div class="panel"><ul id="excluded"></ul></div>
+</section>
+
+<section>
+  <h2>Definitions &amp; assumptions</h2>
+  <div class="panel"><ul>
+    <li><code>provider_cost</code> — sum of provider spend attributed to the user in the window.</li>
+    <li><code>recognized_revenue</code> — subscriptions prorated daily across their period;
+        one-time payments recognized straight-line over the 30 days after the charge
+        (an approximation of consumption-based recognition — the export cannot show consumption);
+        promotional grants: 0.</li>
+    <li><code>gross_margin</code> = recognized_revenue − provider_cost.</li>
+    <li><code>negative_margin_user</code> — gross_margin &lt; 0 over the selected rolling window.</li>
+    <li>The window ends at the newest date found in your files, not at today.</li>
+    <li id="a-prorate" class="hidden"><b>Proration is in effect:</b> no per-user key could be
+        matched, so total provider cost was distributed across paying users in proportion to
+        recognized revenue. Every figure on this page is an estimate.</li>
+  </ul></div>
+</section>
+</div>
+
+<footer>
+  <span>Computed with TEGATA · <a href="https://github.com/Torutesu/tegataai" rel="noopener">the spec is public</a></span>
+  · <span>No. <span id="docno2">—</span></span>
+</footer>
+</div>
+
+<script>
+"use strict";
+/* TEGATA margin diagnostic — single file, no dependencies, no network.
+   Spec: docs/gtm/margin-diagnostic.md · metric definitions: docs/prd/tegata-credits.md §11.2 */
+
+const BOOKING_URL = "";           // when set, the "talk" button appears
+const $ = id => document.getElementById(id);
+
+/* ---------- csv ---------- */
+function parseCSV(text){
+  const rows=[]; let row=[], cell="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=""; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n')i++;
+      row.push(cell); cell=""; if(row.length>1||row[0]!=="") rows.push(row); row=[]; }
+    else cell+=c;
+  }
+  if(cell!==""||row.length){ row.push(cell); rows.push(row); }
+  if(!rows.length) return {headers:[],rows:[]};
+  const headers=rows[0].map(h=>h.trim());
+  return {headers, rows:rows.slice(1).map(r=>{const o={};headers.forEach((h,i)=>o[h]=(r[i]??"").trim());return o;})};
+}
+const money = s => { if(s==null||s==="")return NaN;
+  const n=parseFloat(String(s).replace(/[^0-9.\-]/g,"")); return isFinite(n)?n:NaN; };
+const when = s => { if(!s)return NaN;
+  let t=Date.parse(s); if(isFinite(t))return t;
+  t=Date.parse(String(s).replace(" ","T")+"Z"); return isFinite(t)?t:NaN; };
+
+/* ---------- column detection ---------- */
+function detect(headers, sampleRows, wants){
+  const pick={};
+  for(const [field, res] of Object.entries(wants)){
+    pick[field]="";
+    for(const re of res){
+      const h=headers.find(h=>re.test(h));
+      if(h){pick[field]=h;break;}
+    }
+  }
+  // customer id by value shape beats header names
+  if("customer" in wants && sampleRows.length){
+    const byVal=headers.find(h=>sampleRows.some(r=>/^cus_[A-Za-z0-9]+$/.test(r[h]||"")));
+    if(byVal) pick.customer=byVal;
+  }
+  return pick;
+}
+const STRIPE_WANTS={ customer:[/^customer\s*id$/i,/customer/i],
+  amount:[/^amount\s*paid$/i,/^converted\s*amount$/i,/^amount$/i,/amount/i],
+  refunded:[/refund/i], date:[/created/i,/^date/i,/paid.*at/i],
+  currency:[/currency/i], desc:[/description/i,/^type$/i,/product/i,/plan/i],
+  pstart:[/period\s*start/i], pend:[/period\s*end/i] };
+const USAGE_WANTS={ key:[/api[_\s]*key/i,/customer/i,/user/i,/project/i,/workspace/i,/^name$/i,/^key$/i],
+  cost:[/cost/i,/usd/i,/spend/i,/amount/i], model:[/model/i], date:[/date/i,/time/i],
+  intok:[/input.*tok|prompt.*tok|context.*tok/i], outtok:[/output.*tok|completion.*tok|generated.*tok/i] };
+
+/* ---------- state ---------- */
+const S={stripe:null, usage:null, map:null, pick:{}, rates:{}};
+
+function bindDrop(dz, fi, st, slot){
+  const set=f=>{ const rd=new FileReader();
+    rd.onload=()=>{ S[slot]=parseCSV(rd.result);
+      $(st).textContent=f.name+" · "+S[slot].rows.length+" rows"; $(st).classList.add("ok");
+      afterLoad(); };
+    rd.readAsText(f); };
+  $(fi).addEventListener("change",e=>e.target.files[0]&&set(e.target.files[0]));
+  const el=$(dz);
+  el.addEventListener("dragover",e=>{e.preventDefault();el.classList.add("over");});
+  el.addEventListener("dragleave",()=>el.classList.remove("over"));
+  el.addEventListener("drop",e=>{e.preventDefault();el.classList.remove("over");
+    e.dataTransfer.files[0]&&set(e.dataTransfer.files[0]);});
+}
+bindDrop("dz-stripe","f-stripe","st-stripe","stripe");
+bindDrop("dz-usage","f-usage","st-usage","usage");
+bindDrop("dz-map","f-map","st-map","map");
+
+function afterLoad(){
+  $("run").disabled=!(S.stripe&&S.usage);
+  if(!S.stripe||!S.usage)return;
+  S.pick.stripe=detect(S.stripe.headers,S.stripe.rows.slice(0,50),STRIPE_WANTS);
+  S.pick.usage =detect(S.usage.headers, S.usage.rows.slice(0,50), USAGE_WANTS);
+  renderMapping();
+}
+function renderMapping(){
+  const g=$("mapgrid"); g.innerHTML="";
+  const opt=(headers,sel)=>'<option value="">—</option>'+headers.map(h=>
+    `<option ${h===sel?"selected":""}>${h.replace(/</g,"&lt;")}</option>`).join("");
+  const add=(label,side,field,headers)=>{
+    g.insertAdjacentHTML("beforeend",
+      `<label>${label}</label><select data-side="${side}" data-field="${field}">${opt(headers,S.pick[side][field])}</select>`);
+  };
+  add("stripe · customer id","stripe","customer",S.stripe.headers);
+  add("stripe · amount","stripe","amount",S.stripe.headers);
+  add("stripe · date","stripe","date",S.stripe.headers);
+  add("stripe · description/plan","stripe","desc",S.stripe.headers);
+  add("usage · per-user key","usage","key",S.usage.headers);
+  add("usage · cost","usage","cost",S.usage.headers);
+  add("usage · date","usage","date",S.usage.headers);
+  add("usage · model","usage","model",S.usage.headers);
+  g.querySelectorAll("select").forEach(s=>s.addEventListener("change",e=>{
+    S.pick[e.target.dataset.side][e.target.dataset.field]=e.target.value; maybeRates(); }));
+  $("mapping").classList.remove("hidden");
+  maybeRates();
+}
+function maybeRates(){
+  const rg=$("rategrid"); rg.innerHTML="";
+  const u=S.pick.usage;
+  if(u.cost||!u.model||!u.intok) return;
+  const models=[...new Set(S.usage.rows.map(r=>r[u.model]).filter(Boolean))].slice(0,12);
+  rg.insertAdjacentHTML("beforeend",
+    `<label style="grid-column:1/-1"><b>No cost column found.</b> Enter your rates ($ per 1M tokens) —
+     use the prices on your provider's pricing page or your negotiated ones.</label>`);
+  models.forEach(m=>{
+    rg.insertAdjacentHTML("beforeend",
+     `<label>${m.replace(/</g,"&lt;")}</label>
+      <span>in <input type="number" step="0.01" min="0" data-m="${m}" data-k="in" style="width:90px">
+      &nbsp; out <input type="number" step="0.01" min="0" data-m="${m}" data-k="out" style="width:90px"></span>`);
+  });
+  rg.querySelectorAll("input").forEach(i=>i.addEventListener("input",e=>{
+    const {m,k}=e.target.dataset; S.rates[m]=S.rates[m]||{};
+    S.rates[m][k]=parseFloat(e.target.value)||0; }));
+}
+
+/* ---------- compute ---------- */
+function compute(){
+  const t0=performance.now();
+  const sp=S.pick.stripe, up=S.pick.usage;
+  const excl={rows:0, amt:0, reasons:{}};
+  const skip=(reason,amt)=>{excl.rows++; excl.amt+=(amt||0);
+    excl.reasons[reason]=(excl.reasons[reason]||0)+1;};
+
+  // --- pass 1: dates & currency ---
+  let maxT=-Infinity;
+  const curCount={};
+  for(const r of S.stripe.rows){
+    const t=when(r[sp.date]); if(isFinite(t)) maxT=Math.max(maxT,t);
+    const c=(r[sp.currency]||"").toLowerCase(); if(c)curCount[c]=(curCount[c]||0)+1;
+  }
+  for(const r of S.usage.rows){ const t=when(r[up.date]); if(isFinite(t)) maxT=Math.max(maxT,t); }
+  if(!isFinite(maxT)) return {error:"No parseable dates found — check the column mapping."};
+  const mainCur=Object.entries(curCount).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+  const days=parseInt($("win").value,10);
+  const wEnd=maxT, wStart=wEnd-days*86400000;
+  const DAY=86400000;
+
+  // --- revenue: daily proration over overlap with window ---
+  const rev={}, plan={}, isSub=/subscri|invoice|renew/i;
+  for(const r of S.stripe.rows){
+    const cus=r[sp.customer];
+    if(!/^cus_/.test(cus||"")){ skip("stripe row without cus_ id", money(r[sp.amount])); continue; }
+    let amt=money(r[sp.amount]);
+    if(!isFinite(amt)){ skip("stripe row with unparseable amount"); continue; }
+    if(sp.refunded){ const rf=money(r[sp.refunded]); if(isFinite(rf)) amt-=rf; }
+    const cur=(r[sp.currency]||"").toLowerCase();
+    if(mainCur&&cur&&cur!==mainCur){ skip("currency ≠ "+mainCur.toUpperCase(), amt); continue; }
+    const t=when(r[sp.date]);
+    if(!isFinite(t)){ skip("stripe row with unparseable date", amt); continue; }
+    const desc=r[sp.desc]||"";
+    let ps=sp.pstart?when(r[sp.pstart]):NaN, pe=sp.pend?when(r[sp.pend]):NaN;
+    if(!isFinite(ps)||!isFinite(pe)||pe<=ps){ ps=t; pe=t+30*DAY; }   // assume 30d recognition
+    const overlap=Math.max(0, Math.min(pe,wEnd)-Math.max(ps,wStart));
+    const share=amt*overlap/(pe-ps);
+    if(share<=0 && overlap<=0){ skip("outside window", 0); continue; }
+    rev[cus]=(rev[cus]||0)+share;
+    if(!plan[cus]&&isSub.test(desc)) plan[cus]=desc.slice(0,40);
+    if(!plan[cus]&&!isSub.test(desc)) plan[cus]=plan[cus]||"one-time only";
+  }
+
+  // --- cost per key ---
+  const costByKey={}; let totalCost=0;
+  for(const r of S.usage.rows){
+    const t=when(r[up.date]);
+    if(isFinite(t)&&(t<wStart||t>wEnd)){ continue; }
+    let c=up.cost?money(r[up.cost]):NaN;
+    if(!isFinite(c)){
+      const m=r[up.model], rate=S.rates[m];
+      if(rate&&up.intok){
+        c=(money(r[up.intok])||0)/1e6*(rate.in||0)+(money(r[up.outtok])||0)/1e6*(rate.out||0);
+      }
+    }
+    if(!isFinite(c)){ skip("usage row without resolvable cost"); continue; }
+    const k=r[up.key]||"(no key)";
+    costByKey[k]=(costByKey[k]||0)+c; totalCost+=c;
+  }
+
+  // --- attribution: direct cus_ match → map file → proration ---
+  const mapKC={};
+  if(S.map){ for(const r of S.map.rows){ const vals=Object.values(r);
+      const cus=vals.find(v=>/^cus_/.test(v)), key=vals.find(v=>v&&!/^cus_/.test(v));
+      if(cus&&key) mapKC[key]=cus; } }
+  const cost={}; let attributed=0, unattributed=0, prorated=false;
+  for(const [k,c] of Object.entries(costByKey)){
+    const cus=/^cus_/.test(k)?k:mapKC[k];
+    if(cus){ cost[cus]=(cost[cus]||0)+c; attributed+=c; }
+    else unattributed+=c;
+  }
+  if(attributed===0 && totalCost>0 && Object.keys(rev).length){
+    prorated=true; unattributed=0;
+    const totRev=Object.values(rev).reduce((a,b)=>a+b,0)||1;
+    for(const cus of Object.keys(rev)) cost[cus]=totalCost*rev[cus]/totRev;
+  }
+
+  // --- per-user margins ---
+  const users=[...new Set([...Object.keys(rev),...Object.keys(cost)])].map(cus=>({
+    cus, plan:plan[cus]||"—", rev:rev[cus]||0, cost:cost[cus]||0,
+    margin:(rev[cus]||0)-(cost[cus]||0) }));
+  const negUsers=users.filter(u=>u.margin<0);
+  const negCost=negUsers.reduce((a,u)=>a+u.cost,0);
+  const allCost=users.reduce((a,u)=>a+u.cost,0);
+  return { users, negUsers, negCost, allCost, unattributed, prorated, excl,
+    cur:(mainCur||"usd").toUpperCase(), days,
+    wStart, wEnd, ms:performance.now()-t0 };
+}
+
+/* ---------- render ---------- */
+const fmt=(n,cur)=>{const a=Math.abs(n);
+  const s=a>=100?a.toFixed(0):a>=10?a.toFixed(1):a.toFixed(2);
+  return (n<0?"−":"")+(cur==="JPY"?"¥":"$")+s;};
+const pct=x=>isFinite(x)?(x*100).toFixed(x*100>=10?0:1)+"%":"—";
+const mask=id=>id.length>12?id.slice(0,8)+"…"+id.slice(-2):id;
+
+function render(R){
+  if(R.error){ alert(R.error); return; }
+  $("results").classList.remove("hidden");
+  const no=String((R.users.length*7919+R.excl.rows)%1000000).padStart(6,"0");
+  $("docno").textContent="No. "+no; $("docno2").textContent=no;
+  $("est-flag").classList.toggle("hidden",!R.prorated);
+  $("a-prorate").classList.toggle("hidden",!R.prorated);
+  const est=R.prorated?" (estimate)":"";
+  const negShare=R.users.length?R.negUsers.length/R.users.length:0;
+  const costShare=R.allCost?R.negCost/R.allCost:0;
+  $("headline").innerHTML =
+    `<span class="neg">${pct(negShare)}</span> of your users are negative-margin${est}.<br>` +
+    `They consume <span class="neg">${pct(costShare)}</span> of your model spend.`;
+  $("subline").textContent =
+    `${R.users.length} users · last ${R.days} days ending ${new Date(R.wEnd).toISOString().slice(0,10)}`
+    + ` · ${R.cur} · computed in ${R.ms.toFixed(0)} ms`;
+
+  drawHist(R);
+
+  const tb=$("topusers").querySelector("tbody"); tb.innerHTML="";
+  [...R.users].sort((a,b)=>b.cost-a.cost).slice(0,20).forEach(u=>{
+    tb.insertAdjacentHTML("beforeend",
+     `<tr><td style="font-family:var(--mono);font-size:12px">${mask(u.cus)}</td>
+      <td>${u.plan.replace(/</g,"&lt;")}</td><td class="n">${fmt(u.rev,R.cur)}</td>
+      <td class="n">${fmt(u.cost,R.cur)}</td>
+      <td class="n ${u.margin<0?"neg":""}">${fmt(u.margin,R.cur)}</td></tr>`);
+  });
+
+  const byPlan={};
+  R.users.forEach(u=>{ (byPlan[u.plan]=byPlan[u.plan]||[]).push(u); });
+  const pb=$("plans").querySelector("tbody"); pb.innerHTML="";
+  Object.entries(byPlan).sort((a,b)=>b[1].length-a[1].length).forEach(([p,us])=>{
+    const neg=us.filter(u=>u.margin<0).length;
+    const avg=us.reduce((a,u)=>a+u.margin,0)/us.length;
+    const tc=us.reduce((a,u)=>a+u.cost,0);
+    pb.insertAdjacentHTML("beforeend",
+     `<tr><td>${p.replace(/</g,"&lt;")}</td><td class="n">${us.length}</td>
+      <td class="n ${neg?"neg":""}">${neg} (${pct(neg/us.length)})</td>
+      <td class="n ${avg<0?"neg":""}">${fmt(avg,R.cur)}</td><td class="n">${fmt(tc,R.cur)}</td></tr>`);
+  });
+
+  const ex=$("excluded"); ex.innerHTML="";
+  const items=Object.entries(R.excl.reasons).map(([r,n])=>`<li>${n} rows — ${r}</li>`);
+  if(R.unattributed>0) items.push(
+    `<li><b>${fmt(R.unattributed,R.cur)} of provider cost could not be attributed to any
+     customer</b> — keys with no cus_ match and no map entry. It is excluded from every figure
+     above, not guessed.</li>`);
+  ex.innerHTML=items.length?items.join(""):"<li>none — every row was used</li>";
+
+  if(BOOKING_URL){ const b=$("book"); b.href=BOOKING_URL; b.classList.remove("hidden"); }
+  window.__R=R;
+}
+
+/* histogram: polarity palette, zero line, per-bar tooltip (dataviz-validated) */
+function drawHist(R){
+  const svg=$("chart"); svg.innerHTML="";
+  const W=820,H=240,L=44,B=28,T=30;
+  const ms=R.users.map(u=>u.margin); if(!ms.length)return;
+  let lo=Math.min(...ms,0), hi=Math.max(...ms,0);
+  if(lo===hi){lo-=1;hi+=1;}
+  const span=hi-lo, step=niceStep(span/14);
+  lo=Math.floor(lo/step)*step; hi=Math.ceil(hi/step)*step;
+  const nb=Math.round((hi-lo)/step);
+  const bins=Array.from({length:nb},()=>0);
+  ms.forEach(m=>{ let i=Math.min(nb-1,Math.floor((m-lo)/step)); if(m===hi)i=nb-1; bins[i]++; });
+  const maxN=Math.max(...bins,1);
+  const x=v=>L+(v-lo)/(hi-lo)*(W-L-10);
+  const y=n=>H-B-n/maxN*(H-B-T);
+  const NS="http://www.w3.org/2000/svg";
+  const el=(t,a)=>{const e=document.createElementNS(NS,t);
+    for(const k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e;};
+  // grid: recessive, 3 lines
+  [0.5,1].forEach(f=>{ el("line",{x1:L,x2:W-10,y1:y(maxN*f),y2:y(maxN*f),
+      stroke:"#EFEBE2","stroke-width":1});
+    el("text",{x:L-6,y:y(maxN*f)+4,"text-anchor":"end",fill:"#6B6659",
+      "font-size":11,"font-family":"var(--mono)"}).textContent=Math.round(maxN*f); });
+  // bars
+  const tip=$("tip"), wrap=$("chartwrap");
+  bins.forEach((n,i)=>{
+    const v0=lo+i*step, v1=v0+step, neg=v1<=0;
+    const bx=x(v0)+1, bw=x(v1)-x(v0)-2;
+    const r=el("rect",{x:bx,y:n?y(n):y(0)-1,width:Math.max(bw,1),height:n?(y(0)-y(n)):1,
+      fill:n?(neg?"#B8432F":"#8A8272"):"transparent"});
+    if(n){ r.addEventListener("mousemove",e=>{
+        tip.style.display="block";
+        tip.textContent=`${n} user${n>1?"s":""} · ${fmt(v0,R.cur)} to ${fmt(v1,R.cur)}`;
+        const b=wrap.getBoundingClientRect();
+        tip.style.left=(e.clientX-b.left+12)+"px"; tip.style.top=(e.clientY-b.top-28)+"px";});
+      r.addEventListener("mouseleave",()=>tip.style.display="none"); }
+  });
+  // baseline + zero line
+  el("line",{x1:L,x2:W-10,y1:y(0),y2:y(0),stroke:"#211E1A","stroke-width":1.5});
+  if(lo<0&&hi>0){ el("line",{x1:x(0),x2:x(0),y1:T-8,y2:y(0),stroke:"#211E1A",
+      "stroke-width":1,"stroke-dasharray":"3 3"});
+    el("text",{x:x(0),y:T-12,"text-anchor":"middle",fill:"#211E1A","font-size":11,
+      "font-weight":600}).textContent="0"; }
+  // axis ticks
+  for(let v=lo;v<=hi+1e-9;v+=step*Math.ceil(nb/8)){
+    el("text",{x:x(v),y:H-8,"text-anchor":"middle",fill:"#6B6659","font-size":11,
+      "font-family":"var(--mono)"}).textContent=fmt(v,R.cur); }
+  // direct label on the negative mass (selective, not every bar)
+  const negN=R.negUsers.length;
+  if(negN&&lo<0){ el("text",{x:x(lo)+4,y:T+2,fill:"#B8432F","font-size":12,"font-weight":600})
+      .textContent=`${negN} negative`; }
+}
+function niceStep(raw){ const p=Math.pow(10,Math.floor(Math.log10(raw||1)));
+  for(const m of[1,2,2.5,5,10]) if(raw<=m*p) return m*p; return 10*p; }
+
+/* ---------- exports ---------- */
+$("print").addEventListener("click",()=>window.print());
+$("export-csv").addEventListener("click",()=>{
+  const R=window.__R; if(!R)return;
+  const rows=[["customer","plan","recognized_revenue","provider_cost","gross_margin"]];
+  R.users.forEach(u=>rows.push([u.cus,u.plan,u.rev.toFixed(4),u.cost.toFixed(4),u.margin.toFixed(4)]));
+  const blob=new Blob([rows.map(r=>r.map(c=>/[",\n]/.test(c)?`"${c.replace(/"/g,'""')}"`:c).join(",")).join("\n")],
+    {type:"text/csv"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="tegata-margin-per-user.csv"; a.click(); URL.revokeObjectURL(a.href);
+});
+$("run").addEventListener("click",()=>render(compute()));
+
+/* ---------- sample data (synthetic, seeded) ---------- */
+function sampleData(nUsers){
+  let seed=42; const rnd=()=>((seed=seed*1103515245+12345>>>0)/2**32);
+  const plans=[["Pro $20/mo",20,.62],["Max $60/mo",60,.18],["Starter $8/mo",8,.20]];
+  const s=[["Customer ID","Amount","Amount Refunded","Currency","Description","Created (UTC)"]];
+  const u=[["date","api_key","model","input_tokens","output_tokens","cost_usd"]];
+  const end=Date.parse("2026-08-20T00:00:00Z");
+  for(let i=0;i<nUsers;i++){
+    const cus="cus_S"+String(i).padStart(6,"0")+"x";
+    let p=rnd(), pi=p<plans[0][2]?0:p<plans[0][2]+plans[1][2]?1:2;
+    const [pname,price]=plans[pi];
+    const subT=end-Math.floor(rnd()*25+3)*86400000;
+    s.push([cus,price.toFixed(2),"0.00","usd","Subscription to "+pname,
+      new Date(subT).toISOString().slice(0,19).replace("T"," ")]);
+    if(rnd()<0.15) s.push([cus,(10).toFixed(2),"0.00","usd","Credits top-up",
+      new Date(subT+5*86400000).toISOString().slice(0,19).replace("T"," ")]);
+    // heavy-tailed usage: ~15% of users burn hard
+    const heavy=rnd()<0.15, daily=heavy?(1.2+rnd()*3.5):rnd()*0.5;
+    for(let d=0;d<28;d+=2){
+      const t=end-d*86400000; if(t<subT)break;
+      const cost=daily*(0.6+rnd()*0.8), outT=Math.round(cost/15e-6*0.3);
+      u.push([new Date(t).toISOString().slice(0,10),cus,"claude-opus-5",
+        String(Math.round(outT*3.2)),String(outT),cost.toFixed(4)]);
+    }
+  }
+  const csv=rows=>rows.map(r=>r.join(",")).join("\n");
+  return {stripe:csv(s),usage:csv(u)};
+}
+function loadSample(n){
+  const d=sampleData(n||400);
+  S.stripe=parseCSV(d.stripe); S.usage=parseCSV(d.usage);
+  $("st-stripe").textContent="sample-stripe.csv · "+S.stripe.rows.length+" rows";
+  $("st-usage").textContent="sample-usage.csv · "+S.usage.rows.length+" rows";
+  $("st-stripe").classList.add("ok"); $("st-usage").classList.add("ok");
+  afterLoad(); render(compute());
+}
+$("sample").addEventListener("click",()=>loadSample(400));
+const q=new URLSearchParams(location.search);
+if(q.has("sample")) loadSample(parseInt(q.get("sample"),10)||400);
+$("netstate").textContent="";
+</script>
+</body>
+</html>

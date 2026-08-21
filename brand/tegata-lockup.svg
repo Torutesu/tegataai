@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 200" role="img" aria-label="TEGATA">
+  <defs>
+    <clipPath id="ld"><rect x="0" y="0" width="92" height="200"/></clipPath>
+    <clipPath id="rd"><rect x="108" y="0" width="92" height="200"/></clipPath>
+  </defs>
+  <rect x="22" y="46" width="70" height="108" fill="none" stroke="#211E1A" stroke-width="3"/>
+  <rect x="108" y="46" width="70" height="108" fill="none" stroke="#211E1A" stroke-width="3"/>
+  <g stroke="#CFC9BB" stroke-width="2">
+    <line x1="34" y1="136" x2="80" y2="136"/>
+    <line x1="120" y1="136" x2="166" y2="136"/>
+  </g>
+  <g fill="none" stroke="#B8432F" stroke-width="9">
+    <circle cx="100" cy="96" r="32" clip-path="url(#ld)"/>
+    <circle cx="100" cy="96" r="32" clip-path="url(#rd)"/>
+  </g>
+  <text x="214" y="116" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="52"
+        font-weight="600" letter-spacing="10" fill="#211E1A">TEGATA</text>
+</svg>

@@ -324,6 +324,8 @@ Select KK launch equation: **① Comps → ② Concept Doc → ③ GTM Prototype
 | `docs/gtm/launch-storyboard.md` | ローンチ動画ストーリーボード + 合否自己判定 | JA | #7 |
 | `docs/gtm/lp-skeleton.md` | LP 骨子（Credits / Wallet、EN コピー確定稿） | JA/EN | #4 |
 | `templates/agent-spend-policy.md` | Agent Spend Policy Template（無料配布物・完成品） | EN | #6 |
+| `brand/` + `docs/brand/brand-kit.md` | ロゴ（割印）・カラートークン・タイポ・モチーフ規則 | JA | #2 |
+| `tools/margin-diagnostic/` | margin 診断ツール実装（単一HTML・送信ゼロ） | EN | #5 |
 | `spec/authorization.md` | Authorization protocol（振出→捕捉→解放）の規範仕様 | EN | #3 |
 | `spec/policy.md` | Policy schema（Credits / Wallet 共通） | EN | #3 |
 | `spec/register.md` | Register（追記専用台帳）フォーマット | EN | #3 |
@@ -335,10 +337,10 @@ Select KK launch equation: **① Comps → ② Concept Doc → ③ GTM Prototype
 | # | 成果物 | 状態 |
 |---|---|---|
 | 1 | 商標調査・ドメイン/ハンドル確保 | **未着手（Blocker）** |
-| 2 | ロゴ + 最小ブランドキット | 未着手 |
+| 2 | ロゴ + 最小ブランドキット | **完了**（`brand/` + `docs/brand/brand-kit.md`。ワードマークのアウトライン化のみ残） |
 | 3 | spec-first public repo | **仕様完了。公開整形と LICENSE 配置が残** |
 | 4 | LP 骨子（Credits / Wallet） | **骨子完了**（`docs/gtm/lp-skeleton.md`）。実装が残 |
-| 5 | margin 診断ツール | **仕様完了。実装が残** |
+| 5 | margin 診断ツール | **実装完了**（`tools/margin-diagnostic/`、M-01〜M-07 検証済み）。公開時に別リポジトリへ移す |
 | 6 | Agent Spend Policy Template | **完了** |
 | 7 | ローンチ動画 / ストーリーボード | **ストーリーボード完了**（`docs/gtm/launch-storyboard.md`）。拍1は診断ツール実装後、拍2/3 は Phase 1 最小実装後に撮影可 |
 | 8 | ICP ヒアリングリスト + 質問設計 | **質問設計完了。対象リスト作成が残** |

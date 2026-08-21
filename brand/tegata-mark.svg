@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="TEGATA mark: one seal impressed across two documents">
+  <defs>
+    <clipPath id="left-doc"><rect x="0" y="0" width="92" height="200"/></clipPath>
+    <clipPath id="right-doc"><rect x="108" y="0" width="92" height="200"/></clipPath>
+  </defs>
+  <!-- two instruments -->
+  <rect x="22" y="46" width="70" height="108" fill="none" stroke="#211E1A" stroke-width="3"/>
+  <rect x="108" y="46" width="70" height="108" fill="none" stroke="#211E1A" stroke-width="3"/>
+  <!-- ruled signature lines -->
+  <g stroke="#CFC9BB" stroke-width="2">
+    <line x1="34" y1="136" x2="80" y2="136"/>
+    <line x1="120" y1="136" x2="166" y2="136"/>
+  </g>
+  <!-- the counter-seal: one impression, split by the joint -->
+  <g fill="none" stroke="#B8432F" stroke-width="9">
+    <circle cx="100" cy="96" r="32" clip-path="url(#left-doc)"/>
+    <circle cx="100" cy="96" r="32" clip-path="url(#right-doc)"/>
+  </g>
+</svg>
