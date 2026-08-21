@@ -141,14 +141,63 @@
 <section id="waitlist">
   <h2>早期アクセス</h2>
   <p>少数の設計パートナーと仕様を仕上げています。価格は定額から始めます。売上の何%、ではなく。</p>
-  <!-- TODO(launch): 公開前に action= を実際のリスト宛に差し替える。 -->
-  <form class="waitlist" action="#" method="post" aria-label="ウェイトリスト登録">
+  <form class="waitlist" action="https://api.tegata.ai/v1/waitlist" method="post"
+        aria-label="ウェイトリスト登録"
+        data-sending="送信中…"
+        data-done="登録しました。試せるものができたらご連絡します。"
+        data-slow="少し早すぎました。1分ほど置いてもう一度お試しください。"
+        data-bad="アドレスの形式をご確認ください。"
+        data-offline="いま接続できませんでした。少し後にもう一度お試しください。">
     <label for="email-ja" style="position:absolute;left:-9999px">メールアドレス</label>
     <input id="email-ja" type="email" name="email" required autocomplete="email" placeholder="you@yourapp.com">
+    <label for="cw-ja" style="position:absolute;left:-9999px" aria-hidden="true">この欄は空のままにしてください</label>
+    <input id="cw-ja" type="text" name="company_website" tabindex="-1" autocomplete="off"
+           style="position:absolute;left:-9999px" aria-hidden="true">
     <button class="btn primary" type="submit">登録する</button>
   </form>
+  <p class="form-status quiet" role="status" aria-live="polite" style="margin-top:.7rem"></p>
   <p class="quiet" style="margin-top:.9rem">入力欄はメールだけです。ほかは、会話で聞いたほうが早いので。</p>
 </section>
+<script type="module">
+  // The one piece of script on this page. Without it the form still posts and the
+  // browser navigates to the API's reply, which works but reads badly.
+  const API = document.currentScript?.dataset.api ?? '';
+  for (const form of document.querySelectorAll('form.waitlist')) {
+    const status = form.parentElement.querySelector('.form-status');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const button = form.querySelector('button');
+      const email = form.querySelector('input[type=email]').value;
+      button.disabled = true;
+      status.textContent = form.dataset.sending;
+      try {
+        const res = await fetch(`${form.action}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            locale: document.documentElement.lang,
+            source: 'site',
+            company_website: form.querySelector('input[name=company_website]').value,
+          }),
+        });
+        if (res.status === 202) {
+          form.hidden = true;
+          status.textContent = form.dataset.done;
+        } else if (res.status === 429) {
+          status.textContent = form.dataset.slow;
+          button.disabled = false;
+        } else {
+          status.textContent = form.dataset.bad;
+          button.disabled = false;
+        }
+      } catch {
+        status.textContent = form.dataset.offline;
+        button.disabled = false;
+      }
+    });
+  }
+</script>
 </main>
 
 <footer>

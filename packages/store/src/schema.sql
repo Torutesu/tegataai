@@ -226,3 +226,18 @@ CREATE TABLE settlement_window (
 CREATE INDEX idx_settlement_at ON settlement_window(tenant_id, subject_id, at);
 
 CREATE TABLE schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+
+-- The waitlist. Deliberately not part of the ledger: it holds personal data, which the
+-- register must never contain, and it has its own retention and deletion rules.
+CREATE TABLE waitlist (
+  id            TEXT PRIMARY KEY,           -- ULID
+  email_hash    TEXT NOT NULL UNIQUE,       -- SHA-256 of the normalised address
+  email         TEXT NOT NULL,
+  source        TEXT NOT NULL DEFAULT 'site',
+  locale        TEXT,
+  note          TEXT,
+  created_at    TEXT NOT NULL,
+  confirmed_at  TEXT,
+  unsubscribed_at TEXT
+);
+CREATE INDEX idx_waitlist_created ON waitlist(created_at);

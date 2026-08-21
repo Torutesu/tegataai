@@ -45,6 +45,8 @@ curl -s localhost:8787/v1/register/export -H "$A" | pnpm tegata-verify
 | `HOST` | `127.0.0.1` | |
 | `TEGATA_TENANT_RPS` | `1000` | Tenant ceiling. Exceeding it is a 429 with `Retry-After` |
 | `TEGATA_SUBJECT_RPS` | `20` | Per-subject ceiling. Exceeding it is a **dishonor** with `reason: "rate_limited"`, not an error status |
+| `TEGATA_SITE_ORIGINS` | *(none)* | Comma-separated origins allowed to submit the waitlist form. Empty means same-origin only |
+| `TEGATA_WAITLIST_RPM` | `5` | Waitlist signups per minute from one caller |
 
 Set either to `0` to disable that tier. The two answer differently on purpose: the tenant
 limit protects the node and speaks HTTP, while the subject limit is about one account's own
@@ -67,6 +69,9 @@ budget and comes back as a decision the caller already knows how to handle.
 | `PUT` | `/v1/rules/:rule_id` | An intervention rule, with a holdout arm |
 | `POST` | `/v1/webhooks/stripe` | Entitlement sync. Requires a `Tegata-Tenant` header |
 | `POST` | `/v1/admin/sweep` | Expire matured holds and lapsed grants; purge idempotency keys |
+| `POST` | `/v1/waitlist` | **Unauthenticated.** A public form. Always answers 202, whether or not the address was already known |
+| `GET` | `/v1/waitlist/export` | The list as CSV. Needs the tenant key |
+| `GET` | `/v1/waitlist/count` | How many people are on it. Needs the tenant key |
 
 Writes require an `Idempotency-Key`. Replaying a key returns the original response;
 reusing it with a different body is a 409.

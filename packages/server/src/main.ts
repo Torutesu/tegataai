@@ -27,6 +27,10 @@ const app = buildApp({
   store, clock: systemClock, rng: new SeededRng(1), logger: true,
   tenantRps: num('TEGATA_TENANT_RPS', 1000),
   subjectRps: num('TEGATA_SUBJECT_RPS', 20),
+  // The site is served from somewhere else, so the form's origins are named explicitly.
+  waitlistOrigins: (process.env.TEGATA_SITE_ORIGINS ?? '')
+    .split(',').map((o) => o.trim()).filter((o) => o.length > 0),
+  waitlistRpm: num('TEGATA_WAITLIST_RPM', 5),
 });
 
 /** Housekeeping runs in-process: one node, one loop, nothing else to coordinate. */

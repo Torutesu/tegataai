@@ -579,6 +579,41 @@ export class Store {
       tenantId, fromIso, toIso);
     return new Map(rows.map((r) => [r.subject_id, r.total]));
   }
+  // -------------------------------------------------------------- waitlist
+
+  /**
+   * Signing up is idempotent by address: asking twice is not an error, and the caller
+   * is never told whether an address was already there. That answer would turn the
+   * endpoint into a way of checking who has signed up.
+   */
+  addToWaitlist(entry: {
+    emailHash: string; email: string; source: string; locale: string | null; note: string | null;
+  }): { created: boolean } {
+    const res = stmt(this.db,
+      `INSERT OR IGNORE INTO waitlist (id,email_hash,email,source,locale,note,created_at)
+       VALUES (?,?,?,?,?,?,?)`,
+    ).run(this.newId(), entry.emailHash, entry.email, entry.source, entry.locale, entry.note, this.now());
+    return { created: res.changes === 1 };
+  }
+
+  waitlistCount(): number {
+    return (one<{ n: number }>(this.db,
+      'SELECT COUNT(*) AS n FROM waitlist WHERE unsubscribed_at IS NULL') ?? { n: 0 }).n;
+  }
+
+  waitlistEntries(limit = 10_000): {
+    id: string; email: string; source: string; locale: string | null; created_at: string;
+  }[] {
+    return all(this.db,
+      `SELECT id,email,source,locale,created_at FROM waitlist
+        WHERE unsubscribed_at IS NULL ORDER BY created_at LIMIT ?`, limit);
+  }
+
+  /** Removal is by address and always reports success, for the same reason as above. */
+  removeFromWaitlist(emailHash: string): void {
+    run(this.db, 'UPDATE waitlist SET unsubscribed_at = ? WHERE email_hash = ? AND unsubscribed_at IS NULL',
+      this.now(), emailHash);
+  }
 }
 
 export type { SubjectRow, TenantRow, AuthorizationRow, AppendRequest, OutboxEvent };

@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import {
-  type Clock, type JsonObject, type Rng, RateLimiter, TegataError, canonicalize, err,
-  sha256Hex, toIso,
+  type Clock, type JsonObject, type Rng, RateLimiter, TegataError, canonicalEmail,
+  canonicalize, err, normaliseEmail, redactEmail, sha256Hex, toIso,
 } from '@tegata/core';
 import { Store, type TenantRow , stmt } from '@tegata/store';
 import { validate } from './schemas.js';
@@ -19,6 +19,10 @@ export interface AppOptions {
   /** PRD §12.6. Set either to 0 to disable that tier. */
   tenantRps?: number;
   subjectRps?: number;
+  /** Origins allowed to submit the waitlist form. Empty means same-origin only. */
+  waitlistOrigins?: string[];
+  /** Signups per minute from one address. */
+  waitlistRpm?: number;
 }
 
 declare module 'fastify' {
@@ -34,6 +38,13 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   const subjectRps = opts.subjectRps ?? 20;
   const tenantLimiter = tenantRps > 0 ? new RateLimiter(opts.clock, tenantRps) : null;
   const subjectLimiter = subjectRps > 0 ? new RateLimiter(opts.clock, subjectRps) : null;
+
+  // The waitlist is unauthenticated by necessity — it is a form on a public page — so it
+  // gets its own limiter keyed by caller address, at a rate a person could not exceed.
+  const waitlistRpm = opts.waitlistRpm ?? 5;
+  const waitlistLimiter = waitlistRpm > 0
+    ? new RateLimiter(opts.clock, 1, waitlistRpm) : null;
+  const allowedOrigins = new Set(opts.waitlistOrigins ?? []);
   const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 1_048_576 });
 
 
@@ -57,7 +68,8 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   };
 
   app.addHook('preHandler', async (req, reply) => {
-    if (req.url.startsWith('/v1/webhooks/') || req.url === '/health') return;
+    if (req.url.startsWith('/v1/webhooks/') || req.url.startsWith('/v1/waitlist')
+      || req.url === '/health') return;
     req.tenant = authenticate(req);
 
     // The tenant tier is about protecting the node, so it answers at the transport
@@ -108,6 +120,88 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   };
 
   app.get('/health', async () => ({ status: 'ok' }));
+
+  // ------------------------------------------------------------------ waitlist
+
+  /**
+   * A public form, so this route is unauthenticated and everything it accepts is
+   * treated as hostile. It answers identically whether an address is new, already
+   * present, or malformed — anything else would make it a tool for checking who has
+   * signed up, and the reply is read by a stranger's browser.
+   */
+  const corsFor = (req: FastifyRequest, reply: FastifyReply): boolean => {
+    const origin = req.headers.origin;
+    if (typeof origin !== 'string') return true;          // same-origin or a non-browser client
+    if (!allowedOrigins.has(origin)) return false;
+    void reply.header('access-control-allow-origin', origin);
+    void reply.header('vary', 'Origin');
+    return true;
+  };
+
+  app.options('/v1/waitlist', async (req, reply) => {
+    if (!corsFor(req, reply)) return reply.status(403).send();
+    void reply.header('access-control-allow-methods', 'POST, OPTIONS');
+    void reply.header('access-control-allow-headers', 'content-type');
+    void reply.header('access-control-max-age', '86400');
+    return reply.status(204).send();
+  });
+
+  app.post('/v1/waitlist', async (req, reply) => {
+    if (!corsFor(req, reply)) return reply.status(403).send({ error: { code: 'forbidden_origin' } });
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    // A field no person fills in. Bots fill in everything.
+    if (typeof body.company_website === 'string' && body.company_website.length > 0) {
+      return reply.status(202).send({ ok: true });
+    }
+
+    const caller = (req.headers['cf-connecting-ip'] as string | undefined)
+      ?? (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim()
+      ?? req.ip;
+    if (waitlistLimiter !== null) {
+      const d = waitlistLimiter.take(`wl:${caller}`);
+      if (!d.allowed) {
+        void reply.header('retry-after', String(d.retryAfterSeconds));
+        return reply.status(429).send({ error: { code: 'rate_limited' } });
+      }
+    }
+
+    const raw = typeof body.email === 'string' ? body.email : '';
+    const check = normaliseEmail(raw);
+    if (!check.ok) {
+      // The one case where saying what is wrong helps the person rather than a prober:
+      // they typed their own address and can see it on screen.
+      return reply.status(400).send({ error: { code: 'invalid_email', reason: check.reason } });
+    }
+
+    const locale = typeof body.locale === 'string' ? body.locale.slice(0, 16) : null;
+    const source = typeof body.source === 'string' ? body.source.slice(0, 32) : 'site';
+    store.addToWaitlist({
+      emailHash: sha256Hex(canonicalEmail(check.normalised)),
+      email: check.normalised,
+      source, locale, note: null,
+    });
+    req.log?.info({ waitlist: redactEmail(check.normalised), source }, 'waitlist signup');
+    // Always the same answer, whether or not this address was already known.
+    return reply.status(202).send({ ok: true });
+  });
+
+  app.get('/v1/waitlist/export', async (req, reply) => {
+    req.tenant = authenticate(req);
+    const rows = store.waitlistEntries();
+    const csv = ['id,email,source,locale,created_at']
+      .concat(rows.map((r) => [r.id, r.email, r.source, r.locale ?? '', r.created_at]
+        .map((v) => (/[",\n]/.test(v) ? `"${v.split('"').join('""')}"` : v)).join(',')))
+      .join('\n');
+    void reply.header('content-type', 'text/csv; charset=utf-8');
+    void reply.header('content-disposition', 'attachment; filename="waitlist.csv"');
+    return `${csv}\n`;
+  });
+
+  app.get('/v1/waitlist/count', async (req) => {
+    req.tenant = authenticate(req);
+    return { count: store.waitlistCount() };
+  });
 
   // ------------------------------------------------------------ authorizations
 
