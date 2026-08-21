@@ -69,5 +69,13 @@ reusing it with a different body is a 409.
 
 Single node, single SQLite file, no clustering. It is the reference the spec is
 checked against and the service a design partner can run, not a multi-region
-deployment — see `docs/plan/perf/authorize.json` for the measured limits and
-`docs/plan/credits-mvp.md` §1.2 for what is deliberately absent.
+deployment.
+
+Measured on one node over sixty seconds per level (`docs/plan/perf/authorize.json`):
+throughput sits near **1,750 authorizations per second** regardless of concurrency,
+and **p99 stays under 50ms up to about 25 concurrent connections** (29ms there, 51ms
+at 50, 87ms at 100). Because throughput is flat across those levels and close to the
+raw storage ceiling, the latency beyond that point is requests queueing on the single
+writer rather than any one of them costing more. Distributing the writer is the
+answer, and it is deliberately out of scope here — see `docs/plan/credits-mvp.md`
+§1.2 and §2.1.

@@ -1,8 +1,8 @@
 {
-  "measured_at": "2026-08-21T03:42:22.960Z",
+  "measured_at": "2026-08-21T03:47:43.617Z",
   "node": "v22.22.2",
   "scope": "Single node, localhost, in-process SQLite. Not a distributed measurement.",
-  "duration_seconds_per_level": 12,
+  "duration_seconds_per_level": 60,
   "target": {
     "p99_ms": 50,
     "errors": 0
@@ -10,13 +10,13 @@
   "runs": [
     {
       "connections": 1,
-      "requests_total": 19666,
-      "throughput_rps": 1639,
+      "requests_total": 104835,
+      "throughput_rps": 1747,
       "latency_ms": {
         "p50": 0,
         "p90": 0,
-        "p99": 9,
-        "max": 28
+        "p99": 11,
+        "max": 60
       },
       "errors": 0,
       "timeouts": 0,
@@ -25,13 +25,13 @@
     },
     {
       "connections": 10,
-      "requests_total": 20400,
-      "throughput_rps": 1700,
+      "requests_total": 104695,
+      "throughput_rps": 1745,
       "latency_ms": {
-        "p50": 4,
+        "p50": 3,
         "p90": 15,
-        "p99": 18,
-        "max": 39
+        "p99": 19,
+        "max": 58
       },
       "errors": 0,
       "timeouts": 0,
@@ -40,13 +40,13 @@
     },
     {
       "connections": 25,
-      "requests_total": 19581,
-      "throughput_rps": 1632,
+      "requests_total": 102531,
+      "throughput_rps": 1709,
       "latency_ms": {
         "p50": 11,
         "p90": 24,
-        "p99": 31,
-        "max": 187
+        "p99": 29,
+        "max": 138
       },
       "errors": 0,
       "timeouts": 0,
@@ -55,28 +55,28 @@
     },
     {
       "connections": 50,
-      "requests_total": 21225,
-      "throughput_rps": 1769,
+      "requests_total": 98950,
+      "throughput_rps": 1649,
       "latency_ms": {
-        "p50": 30,
-        "p90": 35,
-        "p99": 41,
-        "max": 433
+        "p50": 32,
+        "p90": 39,
+        "p99": 51,
+        "max": 409
       },
       "errors": 0,
       "timeouts": 0,
       "non_2xx": 0,
-      "meets_p99_target": true
+      "meets_p99_target": false
     },
     {
       "connections": 100,
-      "requests_total": 21800,
-      "throughput_rps": 1817,
+      "requests_total": 99150,
+      "throughput_rps": 1653,
       "latency_ms": {
-        "p50": 52,
-        "p90": 64,
-        "p99": 74,
-        "max": 1451
+        "p50": 58,
+        "p90": 72,
+        "p99": 87,
+        "max": 1820
       },
       "errors": 0,
       "timeouts": 0,
@@ -85,8 +85,8 @@
     }
   ],
   "summary": {
-    "throughput_ceiling_rps": 1817,
-    "highest_concurrency_meeting_p99_target": 50,
+    "throughput_ceiling_rps": 1747,
+    "highest_concurrency_meeting_p99_target": 25,
     "interpretation": "Latency past the throughput ceiling is queueing on the single writer, which is the known consequence of the single-node MVP (Q-03 deferred)."
   },
   "errors_anywhere": false
