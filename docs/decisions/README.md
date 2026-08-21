@@ -29,6 +29,7 @@
 | D-20 | 保留（issue）は残高を動かさない。残高が動くのは約定（grant/capture/adjust/entitlement失効）のみ | 保留を残高移動として記録すると `available = balance − reserved` が二重計上になる。約定と約束を同じ列に混ぜない | spec/register.md §3–4 |
 | D-21 | ハッシュは「hash 列を除いたエントリ全体の JCS」に対して1回だけ定義する。`prev_hash` はエントリの中に置く | 連結とフィールドの二重定義は実装ごとの解釈差を生む。サンプル台帳は実際に検証可能なテストベクタとして保守する | spec/register.md §5 |
 | D-22 | 非金銭の監査事象（割印の承認/却下、失効、停止）は `kind=event` で記録する。`adjust` を流用しない | `adjust` は訂正の意味論を持つ。承認は訂正ではない。意味論を混ぜた台帳は監査で説明できない | spec/register.md §3 |
+| D-30 | Credits MVP の実装を gate 判定と並行させる。Wallet は実装しない | ローンチ動画の拍2/拍3 は実装なしに撮影できず、gate と MVP が循環依存になった。Wallet は市場が EARLY と実証済み（D-26 の調査）なので A→B 順序を維持する | 00-master.md §6.0 |
 | D-29 | core は I/O・wall-clock・乱数を持たない純粋層とし、Clock/Rng を注入する。禁止パターンを CI で機械検査する | 決定論なしに INV-1〜11 はテスト不能。分散化の際に core を書き直さないための唯一の防衛線 | plan/credits-mvp.md §2.1–2.2 |
 | D-28 | MVP の degraded mode は SDK 側で実装する（server 側は provisional capture の受理と reconcile のみ） | 単一ノード MVP では「Edge が判断不能」の実体はクライアントから見たタイムアウト。分散前に server 側 degraded を作るのは実体のない抽象 | plan/credits-mvp.md §5.4 |
 | D-27 | MVP スタックは TypeScript + Fastify + better-sqlite3（単一ノード）。Ajv に spec/schema をそのまま接続し、スキーマの二重定義を作らない | 同期 SQLite は subject 単位直列化が構造的に成立する。Q-03（分散 Edge 基盤）の本回答は据え置き、storage アダプタ境界で守る | plan/credits-mvp.md §2 |

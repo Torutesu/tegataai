@@ -1,0 +1,37 @@
+{
+  "name": "tegata",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "typecheck": "tsc --build --force",
+    "lint": "eslint packages --ext .ts",
+    "test": "vitest run",
+    "verify:spec": "node scripts/verify-spec.mjs",
+    "verify:purity": "node scripts/check-purity.mjs",
+    "verify": "pnpm typecheck && pnpm lint && pnpm verify:purity && pnpm verify:spec && pnpm test",
+    "dev": "tsx packages/server/src/main.ts",
+    "bootstrap": "tsx packages/server/src/cli.ts bootstrap",
+    "perf": "tsx scripts/perf.mts"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "autocannon": "^8.0.0",
+    "eslint": "^8.57.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 # TEGATA AI — Master Document
 
-Select KK / 2026-08-21 / Status: **Concept 完了 · GTM Prototype gate 未通過**
+Select KK / 2026-08-21 / Status: **Concept 完了 · gate 判定継続中 · Credits MVP 実装先行（D-30）**
 本ドキュメントは市場調査・事業定義・ブランド・実行計画を統合した単一の正本。
 
 ---
@@ -15,7 +15,10 @@ Select KK / 2026-08-21 / Status: **Concept 完了 · GTM Prototype gate 未通�
 
 **戦略の骨子**: Open-core（AGPLv3）で「エージェント支出ポリシーの標準スキーマ」を置きに行き、SLA・データループ・レール接続をクラウドで課金する。後発の優位は「どのレールにも義理がないこと」＝ Switzerland position。
 
-**現在地**: Comps 調査完了、Concept Doc 完了。**GTM Prototype gate を通過するまでコードは書かない**（Select KK launch equation 準拠）。
+**現在地**: Comps 調査完了、Concept Doc 完了、Phase 0 成果物ほぼ完了。
+gate 判定材料のうち**ローンチ動画の拍2・拍3（実物の enforcement と検証可能な台帳）は実装なしに
+撮影できず**、gate と MVP が循環依存になった。よって **D-30 により Credits MVP の実装を
+gate 判定と並行させる**。ヒアリング（判定材料の残り）は実装と独立に進行する。
 
 ---
 
@@ -266,7 +269,20 @@ x402 の payment payload、AP2 の signed mandate、ACP の Shared Payment Token
 # 6. 満たすべき条件（Gate）
 
 Select KK launch equation: **① Comps → ② Concept Doc → ③ GTM Prototype gate → ④ Implementation**
-**現在 ② 完了。③ を通過するまでコードを書かない。**
+
+**現在 ② 完了、③ 進行中。③ と ④ を D-30 により並行させる**（下記 6.0 参照）。
+
+## 6.0 gate と実装の並行（D-30）
+
+§6.1 の共通条件は「説得力あるローンチ動画/ストーリーボードが明確に作れないなら Concept に戻す」
+と定める。`docs/gtm/launch-storyboard.md` の自己判定により、動画は3拍で構成され、
+**拍2（実行前に止まる瞬間・実測レイテンシ）と拍3（検証可能な台帳）は実装なしに撮影不能**である。
+したがって gate 通過の判定材料が実装を要求し、実装が gate 通過を待つという循環が生じた。
+
+**解**: Credits MVP を `docs/plan/credits-mvp.md` に従って実装する。gate の残りの判定材料
+（ICP ヒアリング・診断ツールの反応）は実装と独立に進める。**Wallet（Product B）は実装しない**
+— `docs/gtm/icp-target-list.md` §2 の調査により市場が EARLY と実証されたため、§2.3 の
+A → B 順序を維持する。
 
 ## 6.1 GTM Prototype gate 通過条件
 
