@@ -1,0 +1,103 @@
+{
+  "captured_at": "2026-08-21T04:32:18.504Z",
+  "base": "http://127.0.0.1:8791",
+  "note": "Every response and timing below came from a running server. The player replays this file.",
+  "steps": [
+    {
+      "label": "setup",
+      "command": "grant",
+      "status": 201,
+      "decision": null,
+      "latency_ms": 102,
+      "body": {
+        "entitlement_id": "01M0H9EM08MYCS0ETMH92T4YC2",
+        "credits_granted": 1000,
+        "credits_remaining": 1000,
+        "balance": 1000,
+        "reserved": 0,
+        "available": 1000
+      }
+    },
+    {
+      "label": "setup",
+      "command": "grant",
+      "status": 201,
+      "decision": null,
+      "latency_ms": 8.7,
+      "body": {
+        "entitlement_id": "01M0H9EM0WFBKM9CBG7K9YSAMB",
+        "credits_granted": 3,
+        "credits_remaining": 3,
+        "balance": 3,
+        "reserved": 0,
+        "available": 3
+      }
+    },
+    {
+      "label": "beat2-authorize",
+      "command": "curl -X POST $TEGATA/v1/authorizations \\\n  -d '{\"subject_id\":\"user_8f21\",\"action\":\"chat.completion\",\n       \"estimate\":{\"model\":\"claude-opus-5\",\"input_tokens\":12400,\"max_output_tokens\":2000}}'",
+      "status": 201,
+      "decision": "authorized",
+      "latency_ms": 16.8,
+      "body": {
+        "decision": "authorized",
+        "authorization_id": "01M0H9EM1BWJSWJBSZ04FTJD23",
+        "face_value": 12,
+        "available_after_hold": 988,
+        "maturity": "2026-08-21T04:37:16.939Z"
+      }
+    },
+    {
+      "label": "beat2-capture",
+      "command": "curl -X POST $TEGATA/v1/authorizations/01M0H9EM…/capture \\\n  -d '{\"actual\":{\"input_tokens\":12400,\"output_tokens\":1180,\"cached_input_tokens\":8000}}'",
+      "status": 200,
+      "decision": null,
+      "latency_ms": 10.4,
+      "body": {
+        "authorization_id": "01M0H9EM1BWJSWJBSZ04FTJD23",
+        "state": "captured",
+        "captured_amount": 9,
+        "released_remainder": 3,
+        "balance": 991,
+        "available": 991,
+        "overdrawn": false
+      }
+    },
+    {
+      "label": "beat2-dishonor",
+      "command": "curl -X POST $TEGATA/v1/authorizations \\\n  -d '{\"subject_id\":\"user_2c07\", ...same request...}'",
+      "status": 200,
+      "decision": "dishonored",
+      "latency_ms": 5.5,
+      "body": {
+        "decision": "dishonored",
+        "reason": "insufficient_balance",
+        "available": 3,
+        "required": 12,
+        "remedy": {
+          "fallback_action": "chat.completion.mini",
+          "fallback_face_value": 2
+        }
+      }
+    },
+    {
+      "label": "beat3-export",
+      "command": "curl $TEGATA/v1/register/export > register.jsonl",
+      "status": 200,
+      "latency_ms": 4.7,
+      "body": "6 lines"
+    },
+    {
+      "label": "beat3-verify",
+      "command": "tegata-verify register.jsonl",
+      "ok": true,
+      "output": "user_2c07  balance 3  reserved 0  available 3\nuser_8f21  balance 991  reserved 0  available 991\nchain verifies — 5 entries across 2 subjects, manifest agrees"
+    },
+    {
+      "label": "beat3-tamper",
+      "command": "# change one byte:  delta_amount 1000 -> 999\ntegata-verify register.jsonl",
+      "ok": false,
+      "output": "user_2c07  balance 2  reserved 0  available 2\nuser_8f21  balance 991  reserved 0  available 991\nFAIL  user_2c07 seq 2: hash does not match the entry contents\nchain FAILED — 1 issue(s)"
+    }
+  ]
+}

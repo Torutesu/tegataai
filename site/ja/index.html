@@ -49,6 +49,14 @@
     <a class="btn primary" href="/tool/">粗利を測る — データは送信されません</a>
     <a class="btn" href="#waitlist">ウェイトリストに登録</a>
   </div>
+  <video class="reel" width="1280" height="720" poster="/media/poster.jpg"
+         autoplay muted loop playsinline preload="none"
+         aria-label="16.8ミリ秒で承認されたリクエストと、同じリクエストが5.5ミリ秒で拒否される様子">
+    <source src="/media/tegata-refusal-15s.mp4" type="video/mp4">
+  </video>
+  <p class="cap"><a href="/media/tegata-beats.mp4">全編を見る（38秒）</a>
+  — 認可、約定、不渡り、そして台帳をエクスポートして検証するまで。</p>
+
   <div class="evidence" aria-label="稼働中のサーバーによる認可と不渡り">
 <pre><span class="k">$</span> curl -X POST /v1/authorizations -d '{"action":"chat.completion", ...}'
   <span class="yes">201</span>  {"decision":<span class="yes">"authorized"</span>,"face_value":12,"available_after_hold":988}   <span class="k">11ms</span>

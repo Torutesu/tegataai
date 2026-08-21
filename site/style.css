@@ -115,3 +115,10 @@ footer .origin { max-width: var(--measure); margin-bottom: 1.2rem; }
 
 /* The page commits to the paper look; it does not follow the OS theme. */
 @media print { .btn, form.waitlist { display: none; } }
+
+/* The reel is the same session the evidence block prints, in motion. */
+.reel {
+  display: block; width: 100%; height: auto; max-width: 46rem;
+  margin: 1.8rem 0 0; border: 1px solid var(--rule); background: var(--paper-deep);
+}
+@media (prefers-reduced-motion: reduce) { .reel { display: none; } }

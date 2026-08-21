@@ -292,9 +292,11 @@ A → B 順序を維持する。
 - [x] Agent Spend Policy Template（`templates/agent-spend-policy.md`）
 - [x] spec-first public repo の中身（`spec/` + `packages/` の参照実装）
 - [x] ローンチ動画のストーリーボード（`docs/gtm/launch-storyboard.md`）
-- [ ] **ローンチ動画を実際に撮って出す** ← gate の残り全部
-- [ ] LP 公開 + waitlist 導線
-- [ ] 診断ツールの公開
+- [x] **ローンチ動画の拍2・拍3 を実サーバに対して撮影**（`demo/`。表示レイテンシは全て記録由来）
+- [x] LP 実装（`site/`。全4ページ Lighthouse 100/100/100/100、LCP 1.2s、CLS 0）
+- [ ] 動画の残りシーン（1・2・3・5・7）を撮る
+- [ ] **公開**（LP / 診断ツール / spec repo）← **商標の回答待ち**
+- [ ] waitlist フォームのバックエンド（現在 `action="#"`。宛先なしで受け取るほうが害が大きい）
 
 **ルール（不変）**: 説得力あるローンチ動画が明確に作れないなら、Concept 段階に戻す。
 拍2（実行前に止まる瞬間）と拍3（検証可能な台帳）は**実装済みで撮影可能**であることを確認済み。
@@ -392,8 +394,8 @@ Q-04 と Q-05 の検証を担っていた。外した以上、この2つは §6.
 | 1 | 商標調査・ドメイン/ハンドル確保 | **進行中**（オーナー承認済 2026-08-21）。依頼書は `docs/gtm/trademark-brief.md` |
 | 2 | ロゴ + 最小ブランドキット | **完了**（`brand/` + `docs/brand/brand-kit.md`。ワードマークのアウトライン化のみ残） |
 | 3 | spec-first public repo | **仕様完了・LICENSE 配置済（AGPL-3.0）。公開タイミング判断のみ残** |
-| 4 | LP 骨子（Credits / Wallet） | **骨子完了**（`docs/gtm/lp-skeleton.md`）。実装が残 |
+| 4 | LP 骨子（Credits / Wallet） | **実装完了**（`site/`、全4ページ Lighthouse 100/100/100/100）。公開は商標待ち |
 | 5 | margin 診断ツール | **実装完了**（`tools/margin-diagnostic/`、M-01〜M-07 検証済み）。公開時に別リポジトリへ移す |
 | 6 | Agent Spend Policy Template | **完了** |
-| 7 | ローンチ動画 / ストーリーボード | **ストーリーボード完了**（`docs/gtm/launch-storyboard.md`）。拍1は診断ツール実装後、拍2/3 は Phase 1 最小実装後に撮影可 |
+| 7 | ローンチ動画 / ストーリーボード | **拍2・拍3 を実サーバに対して撮影完了**（`demo/`、38秒）。残りはシーン1・2・3・5・7 |
 | 8 | ICP ヒアリングリスト + 質問設計 | **完了・ただし gate 条件からは除外（D-32）。** 前提が外れたときの再開用に保持 |

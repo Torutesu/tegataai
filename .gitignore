@@ -5,3 +5,9 @@ dist/
 *.db-wal
 *.db-shm
 .env
+
+# demo working files; the mp4/webm outputs are committed under site/media/
+demo/out/
+demo/frames/
+perf.db*
+demo.db*
