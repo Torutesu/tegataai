@@ -315,10 +315,28 @@ Select KK launch equation: **① Comps → ② Concept Doc → ③ GTM Prototype
 
 # 8. 派生ドキュメント
 
-| ドキュメント | 内容 | 言語 |
+| ドキュメント | 内容 | 言語 | Backlog |
+|---|---|---|---|
+| `docs/prd/tegata-credits.md` | Product A の要件定義（実装可能粒度） | JA | Phase 1 |
+| `docs/prd/tegata-wallet.md` | Product B の要件定義（実装可能粒度） | JA | Phase 2 |
+| `docs/gtm/icp-interviews.md` | ICP ヒアリング設計と gate 判定基準 | JA | #8 |
+| `docs/gtm/margin-diagnostic.md` | margin 診断ツールの仕様（無料フック） | JA | #5 |
+| `templates/agent-spend-policy.md` | Agent Spend Policy Template（無料配布物・完成品） | EN | #6 |
+| `spec/authorization.md` | Authorization protocol（振出→捕捉→解放）の規範仕様 | EN | #3 |
+| `spec/policy.md` | Policy schema（Credits / Wallet 共通） | EN | #3 |
+| `spec/register.md` | Register（追記専用台帳）フォーマット | EN | #3 |
+| `spec/schema/*.json` | JSON Schema 2020-12 + 検証済みサンプル | — | #3 |
+| `docs/decisions/` | ADR（設計判断の記録） | JA | — |
+
+## 8.1 Backlog 進捗（Phase 0）
+
+| # | 成果物 | 状態 |
 |---|---|---|
-| `docs/prd/tegata-credits.md` | Product A の要件定義（実装可能粒度） | JA |
-| `spec/authorization.md` | Authorization protocol（振出→捕捉→解放）の規範仕様 | EN |
-| `spec/policy.md` | Policy schema（Credits / Wallet 共通） | EN |
-| `spec/schema/*.json` | JSON Schema | — |
-| `docs/decisions/` | ADR（設計判断の記録） | JA |
+| 1 | 商標調査・ドメイン/ハンドル確保 | **未着手（Blocker）** |
+| 2 | ロゴ + 最小ブランドキット | 未着手 |
+| 3 | spec-first public repo | **仕様完了。公開整形と LICENSE 配置が残** |
+| 4 | LP 骨子（Credits / Wallet） | 未着手 |
+| 5 | margin 診断ツール | **仕様完了。実装が残** |
+| 6 | Agent Spend Policy Template | **完了** |
+| 7 | ローンチ動画 / ストーリーボード | 未着手（**gate の合否そのもの**） |
+| 8 | ICP ヒアリングリスト + 質問設計 | **質問設計完了。対象リスト作成が残** |

@@ -25,6 +25,11 @@ and protocols before any code is written, and to invite comment on them.
 | [`spec/policy.md`](spec/policy.md) | Spend policy schema, shared by Credits and Wallet |
 | [`spec/register.md`](spec/register.md) | Append-only audit ledger format |
 | [`spec/schema/`](spec/schema/) | JSON Schema for the above |
+| [`spec/examples/`](spec/examples/) | Documents that validate against the schemas |
+
+[`templates/agent-spend-policy.md`](templates/agent-spend-policy.md) is a plain-language version of
+the policy schema, meant to be filled in by a finance and platform team before an agent is given a
+payment method. It is usable on its own, with no software behind it.
 
 Internal planning documents live under [`docs/`](docs/) and are written in Japanese.
 
