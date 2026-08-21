@@ -43,6 +43,12 @@ curl -s localhost:8787/v1/register/export -H "$A" | pnpm tegata-verify
 | `TEGATA_DB` | `./tegata.db` | SQLite file |
 | `PORT` | `8787` | |
 | `HOST` | `127.0.0.1` | |
+| `TEGATA_TENANT_RPS` | `1000` | Tenant ceiling. Exceeding it is a 429 with `Retry-After` |
+| `TEGATA_SUBJECT_RPS` | `20` | Per-subject ceiling. Exceeding it is a **dishonor** with `reason: "rate_limited"`, not an error status |
+
+Set either to `0` to disable that tier. The two answer differently on purpose: the tenant
+limit protects the node and speaks HTTP, while the subject limit is about one account's own
+budget and comes back as a decision the caller already knows how to handle.
 
 ## Endpoints
 
@@ -72,10 +78,10 @@ checked against and the service a design partner can run, not a multi-region
 deployment.
 
 Measured on one node over sixty seconds per level (`docs/plan/perf/authorize.json`):
-throughput sits near **1,750 authorizations per second** regardless of concurrency,
-and **p99 stays under 50ms up to about 25 concurrent connections** (29ms there, 51ms
-at 50, 87ms at 100). Because throughput is flat across those levels and close to the
-raw storage ceiling, the latency beyond that point is requests queueing on the single
-writer rather than any one of them costing more. Distributing the writer is the
-answer, and it is deliberately out of scope here — see `docs/plan/credits-mvp.md`
-§1.2 and §2.1.
+throughput is flat across concurrency at **roughly 1,200–1,800 authorizations per
+second** depending on the host, and **p99 stays under 50ms up to about 25 concurrent
+connections** — that second figure held across every run. Because throughput does not
+rise with concurrency and sits near the raw storage ceiling, latency past that point is
+requests queueing on the single writer rather than any one of them costing more.
+Distributing the writer is the answer, and it is deliberately out of scope here — see
+`docs/plan/credits-mvp.md` §1.2 and §2.1.

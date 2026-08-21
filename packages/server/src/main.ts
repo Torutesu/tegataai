@@ -14,7 +14,20 @@ const store = new Store({
   rng: new SeededRng(randomBytes(4).readUInt32BE(0)),
 });
 
-const app = buildApp({ store, clock: systemClock, rng: new SeededRng(1), logger: true });
+// PRD §12.6. Env overrides so an operator can raise or disable them without a rebuild.
+const num = (name: string, fallback: number): number => {
+  const raw = process.env[name];
+  if (raw === undefined) return fallback;
+  const v = Number(raw);
+  if (!Number.isSafeInteger(v) || v < 0) throw new Error(`${name} must be a non-negative integer`);
+  return v;
+};
+
+const app = buildApp({
+  store, clock: systemClock, rng: new SeededRng(1), logger: true,
+  tenantRps: num('TEGATA_TENANT_RPS', 1000),
+  subjectRps: num('TEGATA_SUBJECT_RPS', 20),
+});
 
 /** Housekeeping runs in-process: one node, one loop, nothing else to coordinate. */
 const sweeper = setInterval(() => {

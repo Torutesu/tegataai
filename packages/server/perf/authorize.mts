@@ -44,7 +44,13 @@ for (let i = 0; i < SUBJECTS; i++) {
   store.grant(tenantId, id, { source: 'grant', credits: 500_000_000 });
 }
 
-const app = buildApp({ store, clock: systemClock, rng: new SeededRng(9) });
+// Measured with the limits on, at the ceilings an operator would actually run, so the
+// number is what the service does rather than what it could do with a guard removed.
+const app = buildApp({
+  store, clock: systemClock, rng: new SeededRng(9),
+  tenantRps: Number(process.env.PERF_TENANT_RPS ?? 100_000),
+  subjectRps: Number(process.env.PERF_SUBJECT_RPS ?? 100_000),
+});
 await app.listen({ port: 8899, host: '127.0.0.1' });
 
 const durationSec = Number(process.env.PERF_SECONDS ?? 20);

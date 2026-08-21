@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-08-21T03:47:43.617Z",
+  "measured_at": "2026-08-21T05:42:02.435Z",
   "node": "v22.22.2",
   "scope": "Single node, localhost, in-process SQLite. Not a distributed measurement.",
   "duration_seconds_per_level": 60,
@@ -10,13 +10,13 @@
   "runs": [
     {
       "connections": 1,
-      "requests_total": 104835,
-      "throughput_rps": 1747,
+      "requests_total": 73247,
+      "throughput_rps": 1221,
       "latency_ms": {
         "p50": 0,
         "p90": 0,
-        "p99": 11,
-        "max": 60
+        "p99": 13,
+        "max": 38
       },
       "errors": 0,
       "timeouts": 0,
@@ -25,13 +25,13 @@
     },
     {
       "connections": 10,
-      "requests_total": 104695,
-      "throughput_rps": 1745,
+      "requests_total": 72180,
+      "throughput_rps": 1203,
       "latency_ms": {
-        "p50": 3,
-        "p90": 15,
-        "p99": 19,
-        "max": 58
+        "p50": 5,
+        "p90": 20,
+        "p99": 25,
+        "max": 127
       },
       "errors": 0,
       "timeouts": 0,
@@ -40,13 +40,13 @@
     },
     {
       "connections": 25,
-      "requests_total": 102531,
-      "throughput_rps": 1709,
+      "requests_total": 72694,
+      "throughput_rps": 1212,
       "latency_ms": {
-        "p50": 11,
-        "p90": 24,
-        "p99": 29,
-        "max": 138
+        "p50": 16,
+        "p90": 32,
+        "p99": 37,
+        "max": 211
       },
       "errors": 0,
       "timeouts": 0,
@@ -55,13 +55,13 @@
     },
     {
       "connections": 50,
-      "requests_total": 98950,
-      "throughput_rps": 1649,
+      "requests_total": 72975,
+      "throughput_rps": 1216,
       "latency_ms": {
-        "p50": 32,
-        "p90": 39,
-        "p99": 51,
-        "max": 409
+        "p50": 44,
+        "p90": 50,
+        "p99": 58,
+        "max": 641
       },
       "errors": 0,
       "timeouts": 0,
@@ -70,13 +70,13 @@
     },
     {
       "connections": 100,
-      "requests_total": 99150,
-      "throughput_rps": 1653,
+      "requests_total": 70950,
+      "throughput_rps": 1203,
       "latency_ms": {
-        "p50": 58,
-        "p90": 72,
-        "p99": 87,
-        "max": 1820
+        "p50": 81,
+        "p90": 98,
+        "p99": 112,
+        "max": 2335
       },
       "errors": 0,
       "timeouts": 0,
@@ -85,9 +85,15 @@
     }
   ],
   "summary": {
-    "throughput_ceiling_rps": 1747,
+    "throughput_ceiling_rps": 1221,
     "highest_concurrency_meeting_p99_target": 25,
     "interpretation": "Latency past the throughput ceiling is queueing on the single writer, which is the known consequence of the single-node MVP (Q-03 deferred)."
   },
-  "errors_anywhere": false
+  "errors_anywhere": false,
+  "note_on_variance": "This run measured ~1,220 req/s where an earlier run on the same code measured ~1,750. Checked rather than assumed: the pre-change commit re-measured at 1,219 on this machine, and disabling the rate limiter changed nothing, so the difference is the host, not the code. Treat the ceiling as roughly 1,200-1,800 req/s on one node and the concurrency figure as the stable result: p99 stays under 50ms to about 25 connections in both.",
+  "rate_limits_active_during_measurement": {
+    "tenant_rps": 100000,
+    "subject_rps": 100000,
+    "note": "Set high so the limiter runs on every request without shaping the load. Measured with it disabled too; the difference was within noise."
+  }
 }

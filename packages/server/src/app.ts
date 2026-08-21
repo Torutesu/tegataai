@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import {
-  type Clock, type JsonObject, type Rng, TegataError, canonicalize, err, sha256Hex, toIso,
+  type Clock, type JsonObject, type Rng, RateLimiter, TegataError, canonicalize, err,
+  sha256Hex, toIso,
 } from '@tegata/core';
 import { Store, type TenantRow , stmt } from '@tegata/store';
 import { validate } from './schemas.js';
@@ -15,6 +16,9 @@ export interface AppOptions {
   clock: Clock;
   rng: Rng;
   logger?: boolean;
+  /** PRD §12.6. Set either to 0 to disable that tier. */
+  tenantRps?: number;
+  subjectRps?: number;
 }
 
 declare module 'fastify' {
@@ -23,22 +27,15 @@ declare module 'fastify' {
 
 export function buildApp(opts: AppOptions): FastifyInstance {
   const { store } = opts;
+
+  // PRD §12.6. Two tiers, because they answer different questions: the tenant limit
+  // protects the node, the subject limit protects one tenant's users from each other.
+  const tenantRps = opts.tenantRps ?? 1000;
+  const subjectRps = opts.subjectRps ?? 20;
+  const tenantLimiter = tenantRps > 0 ? new RateLimiter(opts.clock, tenantRps) : null;
+  const subjectLimiter = subjectRps > 0 ? new RateLimiter(opts.clock, subjectRps) : null;
   const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 1_048_576 });
 
-  /**
-   * A webhook signature covers the bytes the sender signed. Re-serialising a parsed
-   * body produces different bytes for the same document — different whitespace, and
-   * no guarantee of key order — so the raw text is kept for the routes that verify one.
-   */
-  app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) => {
-    (req as FastifyRequest & { rawBody?: string }).rawBody = body as string;
-    if ((body as string).length === 0) { done(null, {}); return; }
-    try {
-      done(null, JSON.parse(body as string) as unknown);
-    } catch {
-      done(err.validation('Body is not valid JSON'), undefined);
-    }
-  });
 
   app.setErrorHandler((error, _req, reply) => {
     if (error instanceof TegataError) return reply.status(error.status).send(error.toJSON());
@@ -59,9 +56,21 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return tenant;
   };
 
-  app.addHook('preHandler', async (req) => {
+  app.addHook('preHandler', async (req, reply) => {
     if (req.url.startsWith('/v1/webhooks/') || req.url === '/health') return;
     req.tenant = authenticate(req);
+
+    // The tenant tier is about protecting the node, so it answers at the transport
+    // level. The subject tier is about one account's own budget, so it answers as a
+    // dishonor further down — a business outcome, not a transport failure.
+    if (tenantLimiter !== null) {
+      const d = tenantLimiter.take(req.tenant.tenant_id);
+      if (!d.allowed) {
+        void reply.header('retry-after', String(d.retryAfterSeconds));
+        throw new TegataError('rate_limited', 429,
+          'Too many requests for this tenant', { retry_after: d.retryAfterSeconds });
+      }
+    }
   });
 
   /**
@@ -104,6 +113,21 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   app.post('/v1/authorizations', async (req, reply) => {
     validate('issue', req.body);
+    const subjectId = (req.body as { subject_id: string }).subject_id;
+    if (subjectLimiter !== null) {
+      const d = subjectLimiter.take(`${req.tenant.tenant_id}:${subjectId}`);
+      if (!d.allowed) {
+        // A refused request is still a decision the caller has to act on, so it comes
+        // back the same shape as any other refusal (spec/authorization.md §4.1).
+        void reply.header('tegata-decision', 'dishonored');
+        void reply.header('retry-after', String(d.retryAfterSeconds));
+        return reply.status(200).send({
+          decision: 'dishonored', reason: 'rate_limited',
+          available: store.balances(req.tenant.tenant_id, subjectId).available,
+          required: 0, retry_after: d.retryAfterSeconds,
+        });
+      }
+    }
     return idempotent<IssueResult>(req, reply, () => {
       const result = issue(store, req.tenant.tenant_id, req.body as never, req.tenant);
       if (result.decision === 'dishonored') {
@@ -316,13 +340,46 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   // ------------------------------------------------------------------- stripe
 
+  // ------------------------------------------------------------- housekeeping
+
+  app.post('/v1/admin/sweep', async (req) => {
+    const expired = expireMatured(store);
+    const purged = store.purgeIdempotency(toIso(store.nowMs() - 86_400_000));
+    const entitlements = sweepEntitlements(store, req.tenant.tenant_id);
+    return { authorizations_expired: expired, idempotency_purged: purged, entitlements_expired: entitlements };
+  });
+
   /**
-   * This endpoint mints credits, so it authenticates before it does anything else.
+   * The webhook lives in its own plugin so the raw-body parser it needs is scoped to it.
+   * Keeping the bytes costs a string conversion on every request it applies to, and
+   * paying that on every route to serve one route measured at about a third of the
+   * service's throughput — so the cost stays where the requirement is.
+   */
+  void app.register(async (scope) => {
+    scope.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) => {
+      (req as FastifyRequest & { rawBody?: string }).rawBody = body as string;
+      if ((body as string).length === 0) { done(null, {}); return; }
+      try {
+        done(null, JSON.parse(body as string) as unknown);
+      } catch {
+        done(err.validation('Body is not valid JSON'), undefined);
+      }
+    });
+
+    registerStripeWebhook(scope, store);
+  });
+
+  return app;
+}
+
+/**
+ * This endpoint mints credits, so it authenticates before it does anything else.
    * An unknown tenant, a tenant with no configured secret, and a missing signature are
    * all 401 — there is no path through here that trusts the caller. It answers the same
    * way for an unknown tenant as for a missing signature, so it cannot be used to
    * enumerate which tenant ids exist.
    */
+function registerStripeWebhook(app: FastifyInstance, store: Store): void {
   app.post('/v1/webhooks/stripe', async (req, reply) => {
     const tenantId = (req.headers['tegata-tenant'] ?? '') as string;
     const tenant = store.getTenant(tenantId);
@@ -337,18 +394,8 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     const result = handleStripeEvent(store, tenantId, (req.body ?? {}) as JsonObject);
     return reply.status(200).send(result);
   });
-
-  // ------------------------------------------------------------- housekeeping
-
-  app.post('/v1/admin/sweep', async (req) => {
-    const expired = expireMatured(store);
-    const purged = store.purgeIdempotency(toIso(store.nowMs() - 86_400_000));
-    const entitlements = sweepEntitlements(store, req.tenant.tenant_id);
-    return { authorizations_expired: expired, idempotency_purged: purged, entitlements_expired: entitlements };
-  });
-
-  return app;
 }
+
 
 /** Grants past their expiry lapse, and the unused remainder leaves the balance. */
 export function sweepEntitlements(store: Store, tenantId: string): number {

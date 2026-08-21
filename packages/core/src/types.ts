@@ -13,7 +13,7 @@ export type AuthorizationState =
   | 'expired'
   | 'dishonored';
 
-/** spec/authorization.md §5. `rate_limited` and `service_degraded` are reserved for later. */
+/** spec/authorization.md §5. `service_degraded` is issued by the SDK, not the server. */
 export type DishonorReason =
   | 'insufficient_balance'
   | 'entitlement_expired'

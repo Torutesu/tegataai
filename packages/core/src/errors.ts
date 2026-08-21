@@ -9,6 +9,7 @@ export type ErrorCode =
   | 'authorization_matured'
   | 'cost_table_version_exists'
   | 'integer_required'
+  | 'rate_limited'
   | 'internal';
 
 export class TegataError extends Error {

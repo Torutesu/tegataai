@@ -21,7 +21,8 @@ interface Response { status: number; body: Record<string, unknown>; text: string
 let keyCounter = 0;
 export const nextKey = (): string => `idem-${++keyCounter}`;
 
-export async function harness(opts: { degraded_mode?: 'allow' | 'deny'; overdraft?: number } = {}): Promise<Harness> {
+export async function harness(opts: { degraded_mode?: 'allow' | 'deny'; overdraft?: number;
+  tenantRps?: number; subjectRps?: number } = {}): Promise<Harness> {
   const clock = new FixedClock('2026-08-21T00:00:00.000Z');
   const rng = new SeededRng('harness');
   const store = new Store({ clock, rng });
@@ -51,7 +52,9 @@ export async function harness(opts: { degraded_mode?: 'allow' | 'deny'; overdraf
     default_face_value: 40, min_face_value: 1, fallback_action: null, fallback_model: null, markup_milli: 1000,
   });
 
-  const app = buildApp({ store, clock, rng });
+  // Off unless a test asks for it: a limiter would otherwise make unrelated tests
+  // flaky in proportion to how many requests they happen to make.
+  const app = buildApp({ store, clock, rng, tenantRps: opts.tenantRps ?? 0, subjectRps: opts.subjectRps ?? 0 });
   await app.ready();
 
   const call = async (method: string, url: string, body?: unknown, extra: Record<string, string> = {}): Promise<Response> => {
