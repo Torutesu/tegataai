@@ -39,3 +39,48 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: pnpm verify:csp
       - run: pnpm verify:e2e
+
+  # The image is what actually runs in production, and until this job existed it had
+  # never been built — better-sqlite3 compiles during the install, which is exactly the
+  # kind of thing that works on a laptop and fails on a slim base image. Building it is
+  # not enough either: an image that builds and then exits on boot is still broken, so
+  # this starts it and asks it a question.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t tegata-api .
+      - name: it boots, keeps a ledger, and answers
+        run: |
+          docker run -d --name api -p 8787:8787 -v tegata-data:/data \
+            -e TEGATA_SITE_ORIGINS="https://tegata.ai" tegata-api
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8787/health >/dev/null && break
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:8787/health || { docker logs api; exit 1; }
+
+          # A tenant, and then a call that needs one: the store is writable on the
+          # volume and the key it printed is the key it accepts.
+          KEY=$(docker exec api pnpm bootstrap 2>/dev/null | awk '/^secret key/ {print $3}')
+          test -n "$KEY" || { echo "bootstrap printed no key"; docker logs api; exit 1; }
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "authorization: Bearer $KEY" http://127.0.0.1:8787/v1/waitlist/count)
+          test "$code" = "200" || { echo "count answered $code"; docker logs api; exit 1; }
+
+          # The form's origin is configured by environment variable, so it is only
+          # right if the container was started right.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8787/v1/waitlist \
+            -H 'content-type: text/plain;charset=UTF-8' -H 'origin: https://tegata.ai' \
+            -d '{"email":"ci@example.com","company_website":"https://not-a-signup"}')
+          test "$code" = "202" || { echo "the waitlist answered $code"; docker logs api; exit 1; }
+
+          # The register outlives the container. If it does not, the ledger is a cache.
+          docker restart api >/dev/null
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8787/health >/dev/null && break
+            sleep 2
+          done
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "authorization: Bearer $KEY" http://127.0.0.1:8787/v1/waitlist/count)
+          test "$code" = "200" || { echo "the key did not survive a restart ($code)"; docker logs api; exit 1; }

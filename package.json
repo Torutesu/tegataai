@@ -5,6 +5,7 @@
   "engines": {
     "node": ">=22"
   },
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "tsc --build",
     "typecheck": "tsc --build --force",
@@ -14,6 +15,7 @@
     "verify:purity": "node scripts/check-purity.mjs",
     "verify": "pnpm typecheck && pnpm lint && pnpm verify:purity && pnpm verify:spec && pnpm verify:site && pnpm test",
     "dev": "tsx packages/server/src/main.ts",
+    "start": "tsx packages/server/src/main.ts",
     "bootstrap": "tsx packages/server/src/cli.ts bootstrap",
     "perf": "tsx packages/server/perf/authorize.mts",
     "verify:acceptance": "vitest run packages/server/src/smoke.test.ts packages/sdk packages/verify",
@@ -22,7 +24,8 @@
     "site": "cd site && python3 -m http.server 8080",
     "verify:csp": "node scripts/check-csp.mjs",
     "measure:banner": "node scripts/measure-banner.mjs",
-    "verify:e2e": "node scripts/e2e-waitlist.mjs"
+    "verify:e2e": "node scripts/e2e-waitlist.mjs",
+    "check:deployed": "node scripts/check-deployed.mjs"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",

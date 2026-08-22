@@ -85,6 +85,17 @@ docker run -d --name tegata-api \
 - `X-Forwarded-For` を渡すこと（waitlist の制限がこれを見る）
 - リクエストボディ上限 1MB（アプリ側にも同じ制限がある）
 
+### イメージは CI でビルドし、起動まで確認している
+
+`.github/workflows/verify.yml` の `image` ジョブが、push ごとに
+**ビルド → 起動 → bootstrap → 認証つきの読み取り → 再起動後も同じ鍵で読める**
+ところまで通す。`better-sqlite3` はインストール時にコンパイルするので、
+「手元では通るが slim イメージで落ちる」典型であり、ビルドしていないイメージは
+本番用の成果物として数えない。再起動の確認は台帳が**キャッシュではない**ことの確認でもある。
+
+`packageManager` を `package.json` に固定してある（pnpm 10.33.0）。
+corepack が別バージョンを引くと lockfile の解釈が変わり得るため。
+
 ### 初回セットアップ
 
 ```bash
@@ -113,6 +124,30 @@ margin-diagnostic/
 
 ---
 
+## 4.5 公開した直後に必ず走らせる
+
+```bash
+pnpm check:deployed https://tegata.ai https://api.tegata.ai --key sk_live_…
+```
+
+**リポジトリ上は正しく、ホスト上で間違っていられるもの**だけを見る。
+ホストが `_headers` を適用しなかった / `.js` の content-type が違う /
+CSP が実際とは別の API を指している / `TEGATA_SITE_ORIGINS` が違う、など。
+
+送信テストはハニーポットを埋めて出すので、**ウェイトリストに行は残らない**
+（サーバの応答は人が出したときと一字一句同じ）。`--key` を省くとテナント鍵が要る項目は
+「合格」ではなく**スキップと表示**される。
+
+検出できることは、故意に壊して確認済み:
+
+| 壊したもの | 出る失敗 |
+|---|---|
+| `.js` を `application/octet-stream` で配信 | `and as a script, so type="module" loads it` |
+| `TEGATA_SITE_ORIGINS` が実ドメインでない | `it accepts a submission from …  — 403` |
+| ホストが `_headers` を適用していない | CSP / HSTS / nosniff / X-Frame-Options が7件 |
+
+---
+
 ## 5. 公開前チェックリスト
 
 **名前**
@@ -126,10 +161,11 @@ margin-diagnostic/
 - [x] ~~フォームが実際に届くか~~ → `pnpm verify:e2e` が CI で回る。
       実サーバ・実 `_headers`・実ブラウザでボタンを押し、行が入るところまで確認する。
       **スクリプトを無効にした経路も含む**（これは実装が壊れていることを実際に見つけた）
-- [ ] `/tool/` が `connect-src 'none'` で、ネットワークタブが空であること
+- [ ] `/tool/` が `connect-src 'none'` で、ネットワークタブが空であること（前者は `check:deployed` が見る）
 - [ ] `.js` が `text/javascript` で返ること（`pnpm verify:e2e` が同じ失敗をローカルで再現する。
       本番では、送信して**遷移せずに**確認文が出れば module として読み込まれている）
-- [ ] OGP が X / Slack で展開されること
+- [ ] OGP が X / Slack で展開されること（タグと画像の到達性は `check:deployed` が見る。
+      実際の展開は各サービスのキャッシュ次第なので目視）
 - [ ] Lighthouse 全4ページ 100（現状の実測値）
 
 **API**

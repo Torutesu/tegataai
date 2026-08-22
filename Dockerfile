@@ -25,4 +25,4 @@ COPY --from=app /app /app
 VOLUME /data
 EXPOSE 8787
 # The register is the record; keep /data on a volume that outlives the container.
-CMD ["pnpm", "dev"]
+CMD ["pnpm", "start"]
