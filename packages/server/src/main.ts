@@ -1,6 +1,5 @@
-import { SeededRng, systemClock } from '@tegata/core';
+import { cryptoRng, systemClock } from '@tegata/core';
 import { Store } from '@tegata/store';
-import { randomBytes } from 'node:crypto';
 import { buildApp } from './app.js';
 import { deliverDue } from './events.js';
 import { expireMatured } from './service.js';
@@ -11,7 +10,10 @@ const host = process.env.HOST ?? '127.0.0.1';
 const store = new Store({
   path: process.env.TEGATA_DB ?? './tegata.db',
   clock: systemClock,
-  rng: new SeededRng(randomBytes(4).readUInt32BE(0)),
+  // Every id in the ledger comes from here. A seeded PRNG belongs in the tests that
+  // need to replay; a running node gets randomness that cannot be reconstructed from
+  // the ids it has already handed out.
+  rng: cryptoRng,
 });
 
 // PRD §12.6. Env overrides so an operator can raise or disable them without a rebuild.
@@ -24,7 +26,7 @@ const num = (name: string, fallback: number): number => {
 };
 
 const app = buildApp({
-  store, clock: systemClock, rng: new SeededRng(1), logger: true,
+  store, clock: systemClock, logger: true,
   tenantRps: num('TEGATA_TENANT_RPS', 1000),
   subjectRps: num('TEGATA_SUBJECT_RPS', 20),
   // The site is served from somewhere else, so the form's origins are named explicitly.

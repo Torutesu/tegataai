@@ -18,6 +18,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
+      # Only what ships. The dev toolchain has advisories of its own and always will;
+      # failing the build for a bundler that never runs in production trains everyone to
+      # ignore this step, which is how the one that matters gets ignored too.
+      - run: pnpm audit --prod --audit-level moderate
 
   # The site's policy is only worth having if the pages still work under it, so the
   # pages are loaded with the real headers applied and any violation fails the build.
@@ -62,7 +66,8 @@ jobs:
 
           # A tenant, and then a call that needs one: the store is writable on the
           # volume and the key it printed is the key it accepts.
-          KEY=$(docker exec api pnpm bootstrap 2>/dev/null | awk '/^secret key/ {print $3}')
+          KEY=$(docker exec api node --import tsx packages/server/src/cli.ts bootstrap \
+            | awk '/^secret key/ {print $3}')
           test -n "$KEY" || { echo "bootstrap printed no key"; docker logs api; exit 1; }
           code=$(curl -s -o /dev/null -w '%{http_code}' \
             -H "authorization: Bearer $KEY" http://127.0.0.1:8787/v1/waitlist/count)
@@ -84,3 +89,24 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' \
             -H "authorization: Bearer $KEY" http://127.0.0.1:8787/v1/waitlist/count)
           test "$code" = "200" || { echo "the key did not survive a restart ($code)"; docker logs api; exit 1; }
+
+  # What a reader would clone. The tree is built from an explicit list of what belongs in
+  # it, and then it has to stand up on its own: install, typecheck, lint and pass its own
+  # tests with nothing from this repository behind it. The build fails if anything
+  # internal — the plan, the target list, the accepted risks — would have gone with it.
+  public:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: node scripts/build-public.mjs
+      - name: it stands on its own
+        working-directory: dist-public
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm verify

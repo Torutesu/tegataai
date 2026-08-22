@@ -11,3 +11,6 @@ demo/out/
 demo/frames/
 perf.db*
 demo.db*
+
+# Built by scripts/build-public.mjs. Never committed — it is a copy.
+dist-public/

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { randomBytes } from 'node:crypto';
-import { SeededRng, sha256Hex, systemClock, UlidFactory } from '@tegata/core';
+import { cryptoRng, sha256Hex, systemClock, UlidFactory } from '@tegata/core';
 import { Store } from '@tegata/store';
 
 const DB = process.env.TEGATA_DB ?? './tegata.db';
@@ -14,9 +14,8 @@ const STARTER_RATES = [
 ];
 
 function bootstrap(): void {
-  const rng = new SeededRng(randomBytes(4).readUInt32BE(0));
-  const store = new Store({ path: DB, clock: systemClock, rng });
-  const ulid = new UlidFactory(() => rng.next());
+  const store = new Store({ path: DB, clock: systemClock, rng: cryptoRng });
+  const ulid = new UlidFactory(() => cryptoRng.next());
   const tenantId = ulid.generate(systemClock.now());
   const secret = `sk_live_${randomBytes(24).toString('base64url')}`;
   const webhookSecret = `whsec_${randomBytes(24).toString('base64url')}`;

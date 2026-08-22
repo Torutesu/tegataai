@@ -46,8 +46,6 @@ pnpm install && pnpm verify     # types, lint, determinism, spec, and the full t
 the policy schema, meant to be filled in by a finance and platform team before an agent is given a
 payment method. It is usable on its own, with no software behind it.
 
-Internal planning documents live under [`docs/`](docs/) and are written in Japanese.
-
 ---
 
 ## Why a paper instrument

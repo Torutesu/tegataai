@@ -104,6 +104,26 @@ for (const path of ['/ja/', '/agents.html']) {
 const missing = await get('/definitely-not-a-page');
 check(missing.status === 404, `a missing page is a 404, not a redirect — ${missing.status ?? missing.error}`);
 
+/**
+ * Every outward link a visitor can click. The one that matters is the repository: it is
+ * the whole claim of a spec-first project, and a repository that is still private
+ * answers 404 to everyone but us — which looks, from our own logged-in browser, exactly
+ * like a link that works.
+ */
+const pageHtml = home.status === 200 ? await home.clone().text() : '';
+const links = [...new Set([...pageHtml.matchAll(/href="(https:\/\/[^"]+)"/g)]
+  .map((m) => m[1])
+  .filter((u) => !u.startsWith(SITE) && !u.startsWith(API)))];
+if (links.length === 0) { skip('no outward links on the home page'); } else {
+  process.stdout.write(`\nwhere the pages send people\n`);
+  for (const link of links) {
+    const r = await fetch(link, { redirect: 'follow', headers: { 'user-agent': 'tegata-deploy-check' } })
+      .catch((e) => ({ error: String(e) }));
+    check(r.status !== undefined && r.status < 400,
+      `${link} — ${r.status ?? r.error}${r.status === 404 ? ' (private, or moved?)' : ''}`);
+  }
+}
+
 process.stdout.write(`\nthe API, from the site's origin\n`);
 
 const health = await fetch(`${API}/health`).catch((e) => ({ error: String(e) }));

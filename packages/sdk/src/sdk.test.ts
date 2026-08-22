@@ -29,7 +29,7 @@ async function rig(opts: { degraded?: 'allow' | 'deny'; timeoutMs?: number } = {
     action: 'chat.completion', pricing_mode: 'fixed', fixed_credits: 10,
     default_face_value: 10, min_face_value: 1, fallback_action: null, fallback_model: null, markup_milli: 1000,
   });
-  const app = buildApp({ store, clock, rng: new SeededRng('app') });
+  const app = buildApp({ store, clock });
   await app.ready();
 
   let reachable = true;

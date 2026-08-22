@@ -12,19 +12,35 @@ const TOLERANCE_SECONDS = 300;
  * a payment webhook is the last place to add a dependency we have not read.
  */
 export function verifyStripeSignature(payload: string, header: string, secret: string, nowMs: number): void {
-  const parts = Object.fromEntries(
-    header.split(',').map((p) => p.split('=', 2) as [string, string]),
-  );
-  const t = Number(parts.t);
-  const v1 = parts.v1;
-  if (!Number.isFinite(t) || typeof v1 !== 'string') throw err.validation('Malformed Stripe-Signature header');
+  // The header carries one `t` and one or more `v1`. More than one appears while a
+  // secret is being rotated — Stripe signs with both, and a reader that keeps only the
+  // last one rejects perfectly good deliveries for as long as the rotation lasts.
+  let t = NaN;
+  const signatures: string[] = [];
+  for (const part of header.split(',')) {
+    const eq = part.indexOf('=');
+    if (eq === -1) continue;
+    const key = part.slice(0, eq).trim();
+    const value = part.slice(eq + 1).trim();
+    if (key === 't') t = Number(value);
+    else if (key === 'v1') signatures.push(value);
+  }
+  if (!Number.isFinite(t) || signatures.length === 0) throw err.validation('Malformed Stripe-Signature header');
   if (Math.abs(Math.floor(nowMs / 1000) - t) > TOLERANCE_SECONDS) {
     throw err.validation('Stripe signature timestamp outside tolerance');
   }
-  const expected = createHmac('sha256', secret).update(`${t}.${payload}`).digest('hex');
-  const a = Buffer.from(expected, 'utf8');
-  const b = Buffer.from(v1, 'utf8');
-  if (a.length !== b.length || !timingSafeEqual(a, b)) throw err.validation('Stripe signature mismatch');
+  const expected = Buffer.from(
+    createHmac('sha256', secret).update(`${t}.${payload}`).digest('hex'), 'utf8',
+  );
+  // Every candidate is compared, and compared in constant time: returning early on the
+  // first match would leak which one matched through timing, and a length check that
+  // short-circuits leaks nothing more than the length, which is fixed anyway.
+  let matched = false;
+  for (const candidate of signatures) {
+    const given = Buffer.from(candidate, 'utf8');
+    if (given.length === expected.length && timingSafeEqual(given, expected)) matched = true;
+  }
+  if (!matched) throw err.validation('Stripe signature mismatch');
 }
 
 interface StripeEvent {

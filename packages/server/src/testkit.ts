@@ -54,7 +54,7 @@ export async function harness(opts: { degraded_mode?: 'allow' | 'deny'; overdraf
 
   // Off unless a test asks for it: a limiter would otherwise make unrelated tests
   // flaky in proportion to how many requests they happen to make.
-  const app = buildApp({ store, clock, rng, tenantRps: opts.tenantRps ?? 0, subjectRps: opts.subjectRps ?? 0 });
+  const app = buildApp({ store, clock, tenantRps: opts.tenantRps ?? 0, subjectRps: opts.subjectRps ?? 0 });
   await app.ready();
 
   const call = async (method: string, url: string, body?: unknown, extra: Record<string, string> = {}): Promise<Response> => {

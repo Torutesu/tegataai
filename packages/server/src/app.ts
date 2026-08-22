@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import {
-  type Clock, type JsonObject, type Rng, RateLimiter, TegataError, canonicalEmail,
-  canonicalize, err, normaliseEmail, redactEmail, sha256Hex, toIso,
+  type Clock, type JsonObject, RateLimiter, TegataError, canonicalEmail,
+  canonicalize, csvDocument, err, normaliseEmail, redactEmail, sha256Hex, toIso,
 } from '@tegata/core';
 import { Store, type TenantRow , stmt } from '@tegata/store';
 import { validate } from './schemas.js';
@@ -14,7 +14,6 @@ import { handleStripeEvent, verifyStripeSignature } from './stripe.js';
 export interface AppOptions {
   store: Store;
   clock: Clock;
-  rng: Rng;
   logger?: boolean;
   /** PRD §12.6. Set either to 0 to disable that tier. */
   tenantRps?: number;
@@ -73,6 +72,19 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     }
   });
 
+
+  /**
+   * Nothing this API returns should be held anywhere. Balances, ledger entries and the
+   * margin report are per-tenant and change under the caller; a proxy or a browser
+   * cache that keeps one is showing someone a number that is no longer true, and
+   * `private` is not enough because the caller is a server, not a person's browser.
+   * `nosniff` is here for the same reason it is on the site: the response's own type is
+   * the only type it should ever be treated as.
+   */
+  app.addHook('onSend', async (_req, reply) => {
+    void reply.header('cache-control', 'no-store');
+    void reply.header('x-content-type-options', 'nosniff');
+  });
 
   app.setErrorHandler((error, _req, reply) => {
     if (error instanceof TegataError) return reply.status(error.status).send(error.toJSON());
@@ -215,8 +227,19 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       return reply.status(400).send({ error: { code: 'invalid_email', reason: check.reason } });
     }
 
-    const locale = typeof body.locale === 'string' ? body.locale.slice(0, 16) : null;
-    const source = typeof body.source === 'string' ? body.source.slice(0, 32) : 'site';
+    /**
+     * These two are ours, not the submitter's — the page fills them in and nobody types
+     * them. Accepting arbitrary text there would put a stranger's string into the export
+     * the owner opens, so anything that is not the shape we write is discarded rather
+     * than trimmed: a tag we did not write tells us nothing anyway.
+     */
+    const tidy = (v: unknown, pattern: RegExp, max: number): string | null => {
+      if (typeof v !== 'string') return null;
+      const trimmed = v.trim().slice(0, max);
+      return pattern.test(trimmed) ? trimmed : null;
+    };
+    const locale = tidy(body.locale, /^[a-zA-Z]{2,8}(-[a-zA-Z0-9]{2,8})*$/, 16);
+    const source = tidy(body.source, /^[a-z0-9][a-z0-9._-]*$/, 32) ?? 'site';
     store.addToWaitlist({
       emailHash: sha256Hex(canonicalEmail(check.normalised)),
       email: check.normalised,
@@ -230,13 +253,16 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   app.get('/v1/waitlist/export', async (req, reply) => {
     req.tenant = authenticate(req);
     const rows = store.waitlistEntries();
-    const csv = ['id,email,source,locale,created_at']
-      .concat(rows.map((r) => [r.id, r.email, r.source, r.locale ?? '', r.created_at]
-        .map((v) => (/[",\n]/.test(v) ? `"${v.split('"').join('""')}"` : v)).join(',')))
-      .join('\n');
+    // csvDocument, not string concatenation: this file is opened in a spreadsheet by the
+    // one person holding the export key, and two of its columns arrive from a public
+    // form. A cell that starts a formula would run as them.
+    const csv = csvDocument(
+      ['id', 'email', 'source', 'locale', 'created_at'],
+      rows.map((r) => [r.id, r.email, r.source, r.locale ?? '', r.created_at]),
+    );
     void reply.header('content-type', 'text/csv; charset=utf-8');
     void reply.header('content-disposition', 'attachment; filename="waitlist.csv"');
-    return `${csv}\n`;
+    return csv;
   });
 
   app.get('/v1/waitlist/count', async (req) => {

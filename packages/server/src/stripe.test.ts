@@ -178,6 +178,30 @@ describe('stripe signature', () => {
     expect(() => verifyStripeSignature(payload, 'garbage', secret, now)).toThrow(/Malformed/);
   });
 
+  /**
+   * Stripe signs with both the old and the new secret while one is being rotated, so a
+   * genuine delivery arrives with two v1 values and only one of them is ours. Reading
+   * the header as a plain object keeps whichever came last, which rejects half of them.
+   */
+  it('accepts a header carrying more than one signature, as a rotation sends', () => {
+    const t = Math.floor(now / 1000);
+    const ours = signatureFor(secret, t, payload).split(',').find((p) => p.startsWith('v1='));
+    expect(() => verifyStripeSignature(payload, `t=${t},${ours},v1=${'0'.repeat(64)}`, secret, now)).not.toThrow();
+    expect(() => verifyStripeSignature(payload, `t=${t},v1=${'0'.repeat(64)},${ours}`, secret, now)).not.toThrow();
+  });
+
+  it('still refuses a header where none of the signatures are ours', () => {
+    const t = Math.floor(now / 1000);
+    expect(() => verifyStripeSignature(payload, `t=${t},v1=${'0'.repeat(64)},v1=${'1'.repeat(64)}`, secret, now))
+      .toThrow(/mismatch/);
+  });
+
+  it('rejects a header with a timestamp but no signature at all', () => {
+    const t = Math.floor(now / 1000);
+    expect(() => verifyStripeSignature(payload, `t=${t}`, secret, now)).toThrow(/Malformed/);
+    expect(() => verifyStripeSignature(payload, `t=${t},v0=abc`, secret, now)).toThrow(/Malformed/);
+  });
+
   it('rejects a signature over different bytes', () => {
     const t = Math.floor(now / 1000);
     const header = signatureFor(secret, t, payload);

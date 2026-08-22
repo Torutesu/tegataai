@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.12
     devDependencies:
       '@types/autocannon':
         specifier: ^7.12.6
@@ -32,9 +36,6 @@ importers:
       playwright:
         specifier: ^1.56.1
         version: 1.62.1
-      tsx:
-        specifier: ^4.19.2
-        version: 4.23.12
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

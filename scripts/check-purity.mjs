@@ -49,6 +49,22 @@ for (const root of PURE) {
   }
 }
 
+/**
+ * The other half of D-29. Injection means the composition root chooses, and choosing a
+ * seeded PRNG there makes every id in the ledger reconstructable from a few observed
+ * ones — while looking, in the diff, exactly like the line the tests use.
+ */
+const ROOTS = ['packages/server/src/main.ts', 'packages/server/src/cli.ts'];
+for (const file of ROOTS) {
+  let src;
+  try { src = readFileSync(file, 'utf8'); } catch { continue; }
+  src.split('\n').forEach((line, i) => {
+    if (/\bnew\s+SeededRng\s*\(/.test(line.replace(/\/\/.*$/, ''))) {
+      violations.push(`${file}:${i + 1}  a seeded PRNG at a composition root — use cryptoRng (D-29)\n    ${line.trim()}`);
+    }
+  });
+}
+
 if (violations.length) {
   console.error(`purity check FAILED — ${violations.length} violation(s):\n`);
   for (const v of violations) console.error(v + '\n');

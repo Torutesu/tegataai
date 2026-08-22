@@ -23,9 +23,13 @@
     "verify:site": "node scripts/check-site.mjs",
     "site": "cd site && python3 -m http.server 8080",
     "verify:csp": "node scripts/check-csp.mjs",
+    "verify:public": "node scripts/build-public.mjs",
     "measure:banner": "node scripts/measure-banner.mjs",
     "verify:e2e": "node scripts/e2e-waitlist.mjs",
     "check:deployed": "node scripts/check-deployed.mjs"
+  },
+  "dependencies": {
+    "tsx": "^4.19.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
@@ -34,7 +38,6 @@
     "@typescript-eslint/parser": "^8.18.0",
     "autocannon": "^8.0.0",
     "eslint": "^8.57.1",
-    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
     "@types/autocannon": "^7.12.6",

@@ -85,6 +85,19 @@ docker run -d --name tegata-api \
 - `X-Forwarded-For` を渡すこと（waitlist の制限がこれを見る）
 - リクエストボディ上限 1MB（アプリ側にも同じ制限がある）
 
+### イメージに入っているもの / 入っていないもの
+
+本番イメージは **`pnpm install --prod`** の結果だけを載せる。
+vitest / vite / esbuild / autocannon / playwright は入っていない。**動かさないから安全**ではなく、
+**入っていないものは悪用できない**という理由による（これらは常に何らかの advisory を持つ）。
+CI の `pnpm audit --prod` は、実際に出荷する依存に脆弱性が出たときだけ落ちる。
+
+実行時に pnpm も corepack も使わない — `node --import tsx …` の**単一プロセス**である。
+シグナルがそのままサーバに届くので、`docker stop` がデータベースを閉じる終了処理を実行する。
+
+**root で走らない**（`USER node`）。`/data` は起動前に所有権を渡してある。
+`HEALTHCHECK` つき。
+
 ### イメージは CI でビルドし、起動まで確認している
 
 `.github/workflows/verify.yml` の `image` ジョブが、push ごとに
@@ -99,7 +112,7 @@ corepack が別バージョンを引くと lockfile の解釈が変わり得る�
 ### 初回セットアップ
 
 ```bash
-docker exec -it tegata-api pnpm bootstrap
+docker exec -it tegata-api node --import tsx packages/server/src/cli.ts bootstrap
 ```
 
 **secret key は一度しか表示されない**（ハッシュしか保存していない）。その場で保管する。
@@ -171,7 +184,7 @@ CSP が実際とは別の API を指している / `TEGATA_SITE_ORIGINS` が違�
 **API**
 - [ ] `TEGATA_SITE_ORIGINS` が実ドメイン
 - [ ] `/data` が永続ボリューム
-- [ ] `pnpm bootstrap` 実行、secret key 保管
+- [ ] bootstrap を実行、secret key 保管（上のコマンド。コンテナ内に pnpm は要らない）
 - [ ] `POST /v1/waitlist` を**本番の LP から**実際に送信して 202 が返ること
       （`TEGATA_SITE_ORIGINS` が違っていると、ブラウザには「接続できませんでした」としか出ない）
 - [ ] `GET /v1/waitlist/count` がテナント鍵で引けること

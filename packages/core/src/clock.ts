@@ -27,6 +27,19 @@ export const systemClock: Clock = {
   iso: () => toIso(Date.now()), // purity-ok: the composition root's clock
 };
 
+/**
+ * The one adapter to real randomness, and the reason it exists: ULIDs are generated from
+ * an injected Rng, so whatever is injected at the composition root decides how guessable
+ * every identifier in the ledger is. A seeded PRNG is 32 bits of state and recoverable
+ * from a couple of observed values — correct for tests, wrong for a running node.
+ *
+ * `getRandomValues` rather than node:crypto so core stays free of platform imports.
+ */
+export const cryptoRng: Rng = {
+  // purity-ok: the composition root's randomness
+  next: () => crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296,
+};
+
 /** A clock the tests drive by hand. */
 export class FixedClock implements Clock {
   private t: number;
