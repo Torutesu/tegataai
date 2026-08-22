@@ -39,8 +39,13 @@ The JSON schemas are read from `spec/schema` at runtime rather than restated in 
 register entry the server emits is validated against them before it leaves.
 
 ```bash
-pnpm install && pnpm verify     # types, lint, determinism, spec, and the full test suite
+pnpm install && pnpm try        # the whole lifecycle, one shell, ~1s
+pnpm verify                     # types, lint, determinism, spec, and the full test suite
 ```
+
+`pnpm try` funds a subject, authorizes before the model runs, settles with what was actually
+used, and then verifies the resulting register without trusting the server that produced it —
+against a database it deletes afterwards. Every number it prints comes from that run.
 
 [`templates/agent-spend-policy.md`](templates/agent-spend-policy.md) is a plain-language version of
 the policy schema, meant to be filled in by a finance and platform team before an agent is given a

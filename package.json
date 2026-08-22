@@ -17,6 +17,7 @@
     "dev": "tsx packages/server/src/main.ts",
     "start": "tsx packages/server/src/main.ts",
     "bootstrap": "tsx packages/server/src/cli.ts bootstrap",
+    "try": "tsx packages/server/src/cli.ts try",
     "perf": "tsx packages/server/perf/authorize.mts",
     "verify:acceptance": "vitest run packages/server/src/smoke.test.ts packages/sdk packages/verify",
     "tegata-verify": "tsx packages/verify/src/cli.ts",

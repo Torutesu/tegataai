@@ -6,6 +6,29 @@ Reference implementation of the TEGATA Credits authorization service.
 
 ```bash
 pnpm install
+pnpm try
+```
+
+That is the whole thing, in one shell, against a database it deletes afterwards: fund a
+subject, authorize before the model runs, settle with what was actually used, read the
+balance back, and verify the register without trusting the server that produced it.
+
+```
+  fund      u_1 now holds 1000 credits
+  issue     authorized — face value 12, 988 left to spend
+            (the hold moves no balance; only settling does)
+  capture   charged 9 of the 12 held — the model used less than the estimate, so the rest went back
+  balance   991 credits, 0 reserved, 991 available
+  margin    this call: charged $0.1800, the model cost $0.1625, kept $0.0175
+  verify    3 entries, hash chain intact — checked here, not taken on trust
+```
+
+Every number there comes from that run — `src/try.test.ts` checks the arithmetic rather
+than the wording, so a printed constant fails.
+
+## Running a server you keep
+
+```bash
 pnpm bootstrap          # creates ./tegata.db, prints a secret key
 export TEGATA_KEY=sk_live_...
 pnpm dev                # listens on 127.0.0.1:8787
